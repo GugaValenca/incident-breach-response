@@ -7,6 +7,7 @@ boundaries, the seeded legal content honoring the verification policy,
 and the views/PDF export driven through real requests.
 """
 
+import importlib
 import io
 import os
 import subprocess
@@ -14,6 +15,7 @@ import sys
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
+from django.apps import apps as django_apps
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
@@ -1030,3 +1032,60 @@ class SettingsFailSafeTests(TestCase):
         self.assertEqual(with_db.stdout.strip(), "django.core.cache.backends.db.DatabaseCache")
         local = self.load_settings("getattr(s, 'CACHES', 'default in-memory')")
         self.assertEqual(local.stdout.strip(), "default in-memory")
+
+
+class SiblingReferenceMigrationTests(TestCase):
+    """0003 rewrites the old "Project N" wording in already-seeded reference
+    data, and must leave every other row (and any incident) alone."""
+
+    def setUp(self):
+        self.migration = importlib.import_module(
+            "incidents.migrations.0003_reword_sibling_app_references"
+        )
+        self.category = DataCategory.objects.create(
+            name="Old wording", description="Kept from Project 2's internal triage, unchanged."
+        )
+        self.untouched = DataCategory.objects.create(
+            name="Other", description="Nothing to change in this one."
+        )
+        self.requirement = LegalRequirement.objects.create(
+            code="old-wording",
+            framework=LegalRequirement.Framework.CCPA,
+            title="Old wording",
+            citation="Cal. Civ. Code § 1798.150",
+            verification_notes="Amounts are CPI-adjusted (see Project 1's seed data).",
+        )
+
+    def test_forwards_rewrites_the_old_references(self):
+        self.migration.forwards(django_apps, None)
+        self.category.refresh_from_db()
+        self.requirement.refresh_from_db()
+        self.assertEqual(
+            self.category.description,
+            "Kept from Data-Mapping-ROPA's internal triage, unchanged.",
+        )
+        self.assertEqual(
+            self.requirement.verification_notes,
+            "Amounts are CPI-adjusted (see the LGPD-GDPR-CCPA-Comparative-Analysis seed data).",
+        )
+
+    def test_rows_without_the_old_wording_are_not_modified(self):
+        self.migration.forwards(django_apps, None)
+        self.untouched.refresh_from_db()
+        self.assertEqual(self.untouched.description, "Nothing to change in this one.")
+
+    def test_forwards_is_idempotent(self):
+        self.migration.forwards(django_apps, None)
+        self.category.refresh_from_db()
+        first = self.category.description
+        self.migration.forwards(django_apps, None)
+        self.category.refresh_from_db()
+        self.assertEqual(self.category.description, first)
+
+    def test_backwards_restores_the_original_text(self):
+        self.migration.forwards(django_apps, None)
+        self.migration.backwards(django_apps, None)
+        self.category.refresh_from_db()
+        self.assertEqual(
+            self.category.description, "Kept from Project 2's internal triage, unchanged."
+        )
