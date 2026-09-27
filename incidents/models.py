@@ -76,6 +76,22 @@ class DataCategory(models.Model):
             "username/email with a password or security Q&A."
         ),
     )
+    # Kept separate from is_ca_breach_element because the two California
+    # definitions differ: § 1798.150 uses § 1798.81.5(d)(1)(A), whose
+    # "medical information" ((d)(2)) covers medical history, treatment or
+    # diagnosis by a health care professional but not a "mental or physical
+    # condition" as § 1798.82 does; it has no ALPR element; and it covers
+    # email + password, not username + password.
+    is_ccpa_150_element = models.BooleanField(
+        default=False,
+        help_text=(
+            "As NimbusCart stores it, this category is 'personal information' for the CCPA "
+            "private right of action (Cal. Civ. Code § 1798.150(a)(1)): name combined with an "
+            "element listed in § 1798.81.5(d)(1)(A) (SSN, government ID number, financial "
+            "account + access code, medical or health insurance information, biometric or "
+            "genetic data), or an email address with a password or security Q&A."
+        ),
+    )
 
     class Meta:
         verbose_name_plural = "Data categories"

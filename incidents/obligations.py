@@ -52,6 +52,7 @@ class IncidentFacts:
     has_financial: bool = False
     has_authentication: bool = False
     has_ca_breach_element: bool = False
+    has_ccpa_150_element: bool = False
     risk_to_individuals: str = "risk"
     data_encrypted: bool = False
     encryption_key_compromised: bool = False
@@ -83,6 +84,7 @@ def facts_from_incident(incident) -> IncidentFacts:
         has_financial=any(c.is_financial for c in categories),
         has_authentication=any(c.is_authentication for c in categories),
         has_ca_breach_element=any(c.is_ca_breach_element for c in categories),
+        has_ccpa_150_element=any(c.is_ccpa_150_element for c in categories),
         risk_to_individuals=incident.risk_to_individuals,
         data_encrypted=incident.data_encrypted,
         encryption_key_compromised=incident.encryption_key_compromised,
@@ -250,18 +252,35 @@ def _ca_attorney_general(facts: IncidentFacts) -> Applicability:
 
 
 def _ccpa_private_action(facts: IncidentFacts) -> Applicability:
-    """§ 1798.150(a)(1): potential statutory-damages exposure. Flagged, not
-    determined — liability also requires a failure to maintain reasonable
-    security, which this tool cannot assess.
+    """§ 1798.150(a)(1): potential statutory-damages exposure for a breach of
+    "nonencrypted and nonredacted personal information" as defined in
+    § 1798.81.5(d)(1)(A), or of an email address with a password or security
+    question and answer. Flagged, not determined: liability also requires a
+    failure to maintain reasonable security, which this tool can't assess.
 
-    Simplification: approximates § 1798.81.5(d)(1)(A)'s definition of
-    personal information with the same category flag as § 1798.82(h).
+    Uses its own category flag (`is_ccpa_150_element`), because that
+    definition is narrower than § 1798.82(h)'s: e.g. self-reported physical
+    conditions can trigger a § 1798.82 notice without being "medical
+    information" under § 1798.81.5(d)(2).
+
+    Simplifications: exfiltration, theft or disclosure is assumed for every
+    recorded incident (as for § 1798.82), and encrypted data whose key was
+    also compromised is treated as exposed — the statute says only
+    "nonencrypted", so for an exposure flag the cautious reading is to flag it.
     """
-    trigger = _ca_breach_trigger(facts)
-    if not trigger.applies:
-        return trigger
+    if facts.count(CA) == 0:
+        return _not_applicable("No affected California residents.")
+    if not facts.has_ccpa_150_element:
+        return _not_applicable(
+            "No affected data category is personal information under § 1798.81.5(d)(1)(A) "
+            "or an email address with a password."
+        )
+    if facts.encryption_protects_data:
+        return _not_applicable("Data was encrypted and the key was not compromised.")
     return _applies(
-        *trigger.reasons,
+        f"{facts.count(CA):,} affected California residents.",
+        "Affected data is personal information under § 1798.81.5(d)(1)(A), or an email "
+        "address with a password.",
         "Exposure only: liability also requires a failure to maintain reasonable security.",
     )
 

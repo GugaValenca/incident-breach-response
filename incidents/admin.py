@@ -91,12 +91,14 @@ class DataCategoryAdmin(admin.ModelAdmin):
         "is_financial",
         "is_authentication",
         "is_ca_breach_element",
+        "is_ccpa_150_element",
     )
     list_filter = (
         "is_special_category",
         "is_financial",
         "is_authentication",
         "is_ca_breach_element",
+        "is_ccpa_150_element",
     )
 
 

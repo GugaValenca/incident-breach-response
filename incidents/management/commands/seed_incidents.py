@@ -24,9 +24,10 @@ clocks.
 Run with: python manage.py seed_incidents
 Safe to re-run: clears incidents and reference data first (--keep to skip).
 
-After re-verifying legal content, refresh just the requirements — leaving
-incidents, their notification records and reference data untouched — with:
-    python manage.py seed_incidents --requirements-only
+After re-verifying legal content, refresh just that content — the legal
+requirements and the data categories' legal classification — leaving
+incidents, their notification records and everything else untouched, with:
+    python manage.py seed_incidents --legal-content-only
 """
 
 from datetime import date, timedelta
@@ -331,38 +332,46 @@ LEGAL_REQUIREMENTS: list[dict[str, Any]] = [
         "title": "Private right of action for data breaches (exposure flag)",
         "recipient": "No notice owed — potential consumer litigation exposure",
         "trigger_summary": (
-            "A consumer whose nonencrypted and nonredacted personal information is subject to "
-            "unauthorized access and exfiltration, theft or disclosure as a result of the "
+            "A consumer whose nonencrypted and nonredacted personal information (name plus an "
+            "element listed in § 1798.81.5(d)(1)(A)), or whose email address with a password or "
+            "security question and answer, is subject to unauthorized access and exfiltration, "
+            "theft or disclosure as a result of the "
             "business's failure to implement and maintain reasonable security may sue for "
-            "statutory damages of $100-$750 per consumer per incident (or actual damages, if "
-            "greater), after giving the business 30 days' written notice and an opportunity to "
+            "statutory damages of $100-$750 per consumer per incident, CPI-adjusted under "
+            "§ 1798.199.95(d) (or actual damages, if greater), after giving the business 30 days' written notice and an opportunity to "
             "cure. Breach notice itself is governed by § 1798.82 (tracked above)."
         ),
         "deadline_unit": LegalRequirement.DeadlineUnit.NONE,
         "deadline_value": None,
         "deadline_text": "Not a notification deadline",
-        "citation": "Cal. Civ. Code § 1798.150(a)(1), (b)",
+        "citation": "Cal. Civ. Code § 1798.150(a)(1), (b); § 1798.81.5(d)(1)-(2)",
         "source_url": CA_CIV_1798_150,
-        "is_verified": False,
-        "verified_on": None,
+        "is_verified": True,
+        "verified_on": VERIFICATION_DATE,
         "verification_notes": (
-            "TODO: VERIFY the § 1798.81.5(d)(1)(A) definition of personal information that "
-            "§ 1798.150(a)(1) incorporates, element by element, against leginfo.legislature."
-            "ca.gov — on 2026-09-26 it could only be read in summary, not quoted, and this tool "
-            "approximates it with the same category flag used for § 1798.82(h). Checked on "
-            "2026-09-26 against leginfo: § 1798.150(a)(1) ($100-$750 per consumer per incident "
-            "or actual damages; 'nonencrypted and nonredacted'; reasonable-security duty) and "
-            "(b) (30 days' written notice and cure), as amended by Stats. 2024, Ch. 121 (AB "
-            "3286). The dollar amounts are the statutory text; the CPPA publishes CPI-adjusted "
-            "figures (see Project 1's seed data for the current adjusted range)."
+            f"VERIFIED {VERIFICATION_DATE} against leginfo.legislature.ca.gov: § 1798.150(a)(1) "
+            "(nonencrypted and nonredacted personal information 'as defined in subparagraph (A) "
+            "of paragraph (1) of subdivision (d) of Section 1798.81.5', or an email address with a "
+            "password or security question and answer; unauthorized access and exfiltration, "
+            "theft or disclosure; reasonable-security duty; $100-$750 per consumer per incident "
+            "or actual damages, adjusted under § 1798.199.95(d)) and (b) (30 days' written notice "
+            "and cure), as amended by Stats. 2024, Ch. 121 (AB 3286); § 1798.81.5(d)(1)(A)(i)-(vii) "
+            "and (d)(2), as amended by Stats. 2021, Ch. 527 (AB 825). That list matches "
+            "§ 1798.82(h)(1) except that it has no ALPR element, but § 1798.81.5(d)(2) defines "
+            "'medical information' more narrowly than § 1798.82(i)(2) (no 'mental or physical "
+            "condition'), so the tool classifies categories for § 1798.150 separately "
+            "(DataCategory.is_ccpa_150_element). The CPPA publishes the CPI-adjusted amounts "
+            "(see Project 1's seed data)."
         ),
         "order": 90,
     },
 ]
 
 # Data categories from Project 2's ROPA, with NimbusCart's classification
-# against the legal tests this tool evaluates:
-# (name, description, special_category, financial, authentication, ca_breach_element)
+# against the legal tests this tool evaluates. Classification choices for
+# this fictional dataset, not legal determinations about real data:
+# (name, description, special_category, financial, authentication,
+#  ca_breach_element [§ 1798.82(h)], ccpa_150_element [§ 1798.150(a)(1)])
 DATA_CATEGORIES = [
     (
         "Contact Information",
@@ -371,29 +380,41 @@ DATA_CATEGORIES = [
         False,
         False,
         False,
+        False,
     ),
     (
         "Account Credentials",
-        "Username/email and hashed password or authentication tokens.",
+        "Login email address and hashed password, plus authentication tokens.",
         False,
         False,
         True,
         True,  # § 1798.82(h)(2): username or email + password.
+        True,  # § 1798.150(a)(1): email address + password.
     ),
     (
         "Payment Card Data",
         "Tokenized card details and billing address via a PCI-compliant processor. Full card "
-        "numbers and security codes are not stored, so this is not a § 1798.82(h)(1)(C) element "
-        "as NimbusCart holds it.",
+        "numbers and security codes are not stored, so this is not a § 1798.82(h)(1)(C) or "
+        "§ 1798.81.5(d)(1)(A)(iii) element as NimbusCart holds it.",
         False,
         True,
         False,
         False,
+        False,
     ),
-    ("Order History", "Past orders, items purchased, order value.", False, False, False, False),
+    (
+        "Order History",
+        "Past orders, items purchased, order value.",
+        False,
+        False,
+        False,
+        False,
+        False,
+    ),
     (
         "Browsing Behavior / Analytics Data",
         "Pages viewed, clicks, search queries, on-site behavior.",
+        False,
         False,
         False,
         False,
@@ -406,6 +427,7 @@ DATA_CATEGORIES = [
         False,
         False,
         False,
+        False,
     ),
     (
         "Marketing Preferences",
@@ -414,10 +436,12 @@ DATA_CATEGORIES = [
         False,
         False,
         False,
+        False,
     ),
     (
         "Customer Support Communications",
         "Content of support tickets, chat transcripts, call notes.",
+        False,
         False,
         False,
         False,
@@ -431,14 +455,22 @@ DATA_CATEGORIES = [
         False,
         False,
         False,
+        False,
     ),
     (
         "Health / Accessibility Information",
-        "Self-reported accessibility or mobility needs, stored with the customer's name.",
+        "Self-reported accessibility or mobility needs, stored with the customer's name. Not "
+        "collected from or confirmed by a health care professional.",
         True,  # Health data: LGPD Art. 5, II / GDPR Art. 9(1).
         False,
         False,
-        True,  # § 1798.82(h)(1)(D) medical information, with name.
+        # § 1798.82(i)(2) "medical information" includes a "mental or physical
+        # condition", which self-reported mobility needs describe.
+        True,
+        # § 1798.81.5(d)(2) is narrower: "medical history or medical treatment
+        # or diagnosis by a health care professional". Self-reported needs are
+        # none of those, so no CCPA § 1798.150 exposure from this category.
+        False,
     ),
     (
         "Government-Issued ID Numbers",
@@ -447,6 +479,7 @@ DATA_CATEGORIES = [
         False,
         False,
         True,  # § 1798.82(h)(1)(B).
+        True,  # § 1798.81.5(d)(1)(A)(ii).
     ),
 ]
 
@@ -579,19 +612,24 @@ class Command(BaseCommand):
             "--keep", action="store_true", help="Don't clear existing data before seeding."
         )
         parser.add_argument(
-            "--requirements-only",
+            "--legal-content-only",
             action="store_true",
             help=(
-                "Only create/update the legal requirements (e.g. after re-verifying them); "
-                "leave incidents and reference data untouched."
+                "Only create/update the legal requirements and the data categories' legal "
+                "classification (e.g. after re-verifying them); leave incidents untouched."
             ),
         )
 
     @transaction.atomic
     def handle(self, *args, **options):
-        if options["requirements_only"]:
+        if options["legal_content_only"]:
             requirements = self._seed_requirements()
-            self.stdout.write(self.style.SUCCESS("Legal requirements refreshed."))
+            self._seed_categories()
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "Legal requirements and data category classification refreshed."
+                )
+            )
             self._warn_unverified(requirements)
             return
 
@@ -643,7 +681,15 @@ class Command(BaseCommand):
 
     def _seed_categories(self) -> dict[str, DataCategory]:
         by_name = {}
-        for name, description, special, financial, auth, ca_element in DATA_CATEGORIES:
+        for (
+            name,
+            description,
+            special,
+            financial,
+            auth,
+            ca_element,
+            ccpa_element,
+        ) in DATA_CATEGORIES:
             by_name[name], _ = DataCategory.objects.update_or_create(
                 name=name,
                 defaults={
@@ -652,6 +698,7 @@ class Command(BaseCommand):
                     "is_financial": financial,
                     "is_authentication": auth,
                     "is_ca_breach_element": ca_element,
+                    "is_ccpa_150_element": ccpa_element,
                 },
             )
         return by_name

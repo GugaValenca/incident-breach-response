@@ -334,14 +334,42 @@ class CaliforniaRuleTests(TestCase):
         self.assertFalse(check_applicability("ca-attorney-general", at).applies)
         self.assertTrue(check_applicability("ca-attorney-general", over).applies)
 
-    def test_ccpa_exposure_follows_the_breach_trigger(self):
-        trigger = facts(individuals_by_jurisdiction={"US-CA": 5}, has_ca_breach_element=True)
-        self.assertTrue(check_applicability("ccpa-private-action", trigger).applies)
+    def test_ccpa_exposure_uses_its_own_definition(self):
+        exposed = facts(individuals_by_jurisdiction={"US-CA": 5}, has_ccpa_150_element=True)
+        self.assertTrue(check_applicability("ccpa-private-action", exposed).applies)
         self.assertFalse(
             check_applicability(
                 "ccpa-private-action", facts(individuals_by_jurisdiction={"US-CA": 5})
             ).applies
         )
+
+    def test_notice_without_ccpa_exposure_when_only_the_broader_definition_is_met(self):
+        # E.g. self-reported physical conditions: "medical information" under
+        # § 1798.82(i)(2), but not under § 1798.81.5(d)(2).
+        physical_condition_only = facts(
+            individuals_by_jurisdiction={"US-CA": 5},
+            has_ca_breach_element=True,
+            has_ccpa_150_element=False,
+        )
+        self.assertTrue(check_applicability("ca-residents", physical_condition_only).applies)
+        self.assertFalse(
+            check_applicability("ccpa-private-action", physical_condition_only).applies
+        )
+
+    def test_ccpa_exposure_is_cleared_by_encryption_with_a_safe_key(self):
+        encrypted = facts(
+            individuals_by_jurisdiction={"US-CA": 5},
+            has_ccpa_150_element=True,
+            data_encrypted=True,
+        )
+        self.assertFalse(check_applicability("ccpa-private-action", encrypted).applies)
+        key_lost = facts(
+            individuals_by_jurisdiction={"US-CA": 5},
+            has_ccpa_150_element=True,
+            data_encrypted=True,
+            encryption_key_compromised=True,
+        )
+        self.assertTrue(check_applicability("ccpa-private-action", key_lost).applies)
 
     def test_unknown_requirement_code_is_never_applicable(self):
         self.assertFalse(check_applicability("not-a-rule", facts()).applies)
@@ -367,9 +395,9 @@ class SeedContentTests(TestCase):
                 self.assertIn("VERIFIED", requirement.verification_notes)
 
     def test_unverified_requirements_carry_a_todo(self):
-        unverified = LegalRequirement.objects.filter(is_verified=False)
-        self.assertTrue(unverified.exists())
-        for requirement in unverified:
+        # Every requirement is currently verified; this guards the policy for
+        # any requirement added later without full verification.
+        for requirement in LegalRequirement.objects.filter(is_verified=False):
             with self.subTest(requirement.code):
                 self.assertTrue(requirement.verification_notes.startswith("TODO: VERIFY"))
                 self.assertIsNone(requirement.verified_on)
@@ -393,11 +421,17 @@ class SeedContentTests(TestCase):
             with self.subTest(requirement.code):
                 self.assertTrue(any(domain in requirement.source_url for domain in allowed))
 
-    def test_requirements_only_refresh_keeps_incidents(self):
+    def test_legal_content_refresh_keeps_incidents(self):
         LegalRequirement.objects.filter(code="gdpr-data-subjects").update(title="Stale title")
+        DataCategory.objects.filter(name="Account Credentials").update(
+            is_ccpa_150_element=False
+        )
         incident_count = Incident.objects.count()
         record_count = NotificationRecord.objects.count()
-        call_command("seed_incidents", "--requirements-only", stdout=io.StringIO())
+        call_command("seed_incidents", "--legal-content-only", stdout=io.StringIO())
+        self.assertTrue(
+            DataCategory.objects.get(name="Account Credentials").is_ccpa_150_element
+        )
         self.assertEqual(Incident.objects.count(), incident_count)
         self.assertEqual(NotificationRecord.objects.count(), record_count)
         self.assertEqual(
@@ -566,12 +600,12 @@ class ViewTests(TestCase):
         self.assertEqual(len(response.context["rows"]), 4)
         self.assertFalse(response.context["filters"].is_active)
 
-    def test_detail_shows_obligations_and_unverified_flag(self):
+    def test_detail_shows_obligations(self):
         response = self.client.get(
             reverse("incidents:incident_detail", args=[self.incident("admin credential").pk])
         )
         self.assertContains(response, "Notify the supervisory authority")
-        self.assertContains(response, "Unverified")
+        self.assertNotContains(response, "Unverified")
         self.assertContains(response, "not an official classification system")
 
     def test_unknown_incident_is_404(self):
@@ -583,7 +617,20 @@ class ViewTests(TestCase):
         self.assertEqual(
             len(response.context["requirements"]), LegalRequirement.objects.count()
         )
-        self.assertContains(response, "TODO: VERIFY")
+        self.assertEqual(response.context["unverified_count"], 0)
+        self.assertNotContains(response, "TODO: VERIFY")
+
+    def test_support_partner_incident_owes_a_california_notice_but_no_ccpa_exposure(self):
+        # Self-reported accessibility needs: § 1798.82 notice, no § 1798.150 flag.
+        incident = self.incident("wrong customer")
+        row = {
+            o.requirement.code: o
+            for o in evaluate_obligations(
+                incident, list(LegalRequirement.objects.all()), timezone.now()
+            )
+        }
+        self.assertTrue(row["ca-residents"].applies)
+        self.assertFalse(row["ccpa-private-action"].applies)
 
     def test_about_links_to_projects_1_to_3(self):
         response = self.client.get(reverse("incidents:about"))
@@ -787,7 +834,7 @@ class PdfExportTests(TestCase):
         self.assertIn(self.incident.reference, text)
         self.assertIn("does not constitute legal advice", text)
         self.assertIn("not an official classification", text)
-        self.assertIn("UNVERIFIED", text)
+        self.assertNotIn("UNVERIFIED", text)
 
     def test_pdf_preserves_markup_characters_in_free_text(self):
         self.incident.summary = "Attacker used <script> & SQL <b>injection</b>"

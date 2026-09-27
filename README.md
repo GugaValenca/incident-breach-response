@@ -92,15 +92,15 @@ it reads them from these rows.
 | GDPR Art. 33(5) | Internal breach record | Ongoing | eur-lex.europa.eu | Verified |
 | Cal. Civ. Code § 1798.82(a) | Affected California residents | 30 calendar days of discovery or notification (as amended by SB 446, eff. Jan. 1, 2026) | leginfo.legislature.ca.gov | Verified |
 | Cal. Civ. Code § 1798.82(f) | California Attorney General (> 500 residents) | 15 calendar days of notifying consumers | leginfo.legislature.ca.gov | Verified |
-| Cal. Civ. Code § 1798.150 (CCPA/CPRA) | No notice — litigation exposure flag | — | leginfo.legislature.ca.gov | **Unverified** (see below) |
+| Cal. Civ. Code § 1798.150 (CCPA/CPRA), with § 1798.81.5(d) | No notice — litigation exposure flag | — | leginfo.legislature.ca.gov | Verified |
 
-**Still to verify, or simplified on purpose** — consolidated here for
-anyone auditing this repo:
+Every requirement is currently verified. **Simplified on purpose**,
+consolidated here for anyone auditing this repo:
 
 | Location | What |
 |---|---|
-| `seed_incidents.py` (`ccpa-private-action`) | `TODO: VERIFY` — § 1798.150 incorporates § 1798.81.5(d)(1)(A)'s definition of personal information, which could only be read in summary, not quoted, on 2026-09-26. The tool approximates it with the same flag used for § 1798.82(h). |
-| `incidents/obligations.py` | Each rule's docstring states its simplification: LGPD's "may significantly affect" is read from the team's documented risk level; only GDPR Art. 34(3)(a) (encryption) is evaluated, not (b)/(c); California's "acquired by an unauthorized person" is assumed for every recorded incident. |
+| `incidents/obligations.py` | Each rule's docstring states its simplification: LGPD's "may significantly affect" is read from the team's documented risk level; only GDPR Art. 34(3)(a) (encryption) is evaluated, not (b)/(c); California's "acquired by an unauthorized person" (and, for § 1798.150, "exfiltration, theft, or disclosure") is assumed for every recorded incident; § 1798.150 speaks only of "nonencrypted" data, so encrypted data whose key was also compromised is still flagged as exposure, the cautious reading for a risk flag. |
+| `seed_incidents.py` (`DATA_CATEGORIES`) | Each data category is classified once against each legal test. The two California definitions differ, so they're separate flags: § 1798.82(i)(2)'s "medical information" includes a "mental or physical condition", while § 1798.81.5(d)(2) (used by § 1798.150) covers only medical history, treatment or diagnosis by a health care professional. NimbusCart's self-reported accessibility needs therefore trigger a § 1798.82 notice but no § 1798.150 exposure. These are classification choices for the fictional dataset, not legal determinations. |
 | Scope | Other US states' breach laws, sector-specific regimes and contractual notice duties to customers/partners are not evaluated. |
 
 **How LGPD business days are counted: a documented interpretation.** The
@@ -209,12 +209,13 @@ data instead of clearing it).
 python manage.py test incidents
 ```
 
-90 tests cover: deadline arithmetic (weekend crossing, start-day
+93 tests cover: deadline arithmetic (weekend crossing, start-day
 exclusion, end-of-day boundaries, countdown labels); each framework's
 applicability rule, including the edges that matter legally (RCIS
 criteria are cumulative with risk; California has no risk-of-harm test;
 the AG threshold is *more than* 500; encryption exceptions and their loss
-when the key is compromised); small-agent deadline doubling; the AG
+when the key is compromised; a California notice without CCPA § 1798.150
+exposure when only § 1798.82's broader definition is met); small-agent deadline doubling; the AG
 deadline re-anchoring on the actual consumer-notice date; the severity
 model's weights and boundaries; the seed data honoring the verification
 policy (every verified row has a source and date, every unverified row a
@@ -260,7 +261,7 @@ incidents/                      The incident-response app
   exports.py                    PDF incident report
   throttling.py                 Which client IP the rate limits count against
   admin.py                      Django admin configuration
-  tests.py                      90 tests
+  tests.py                      93 tests
   management/commands/
     seed_incidents.py            Verified legal requirements + NimbusCart sample data
   templates/                     Page templates, plus the 403/404/500 error pages
@@ -341,11 +342,13 @@ is present.
    ```
 5. **Deploy**: `vercel --prod`, or push to the connected branch.
 
-After re-verifying legal content, update only the requirements in the
-production database, leaving incidents untouched:
+After re-verifying legal content, update only that content in the
+production database (the legal requirements and the data categories' legal
+classification), leaving incidents untouched:
 
 ```bash
-DATABASE_URL="<same value>" python manage.py seed_incidents --requirements-only
+DATABASE_URL="<same value>" python manage.py migrate   # if the models changed
+DATABASE_URL="<same value>" python manage.py seed_incidents --legal-content-only
 ```
 
 Live at [incident-breach-response.vercel.app](https://incident-breach-response.vercel.app),
