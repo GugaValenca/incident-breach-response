@@ -23,6 +23,10 @@ clocks.
 
 Run with: python manage.py seed_incidents
 Safe to re-run: clears incidents and reference data first (--keep to skip).
+
+After re-verifying legal content, refresh just the requirements — leaving
+incidents, their notification records and reference data untouched — with:
+    python manage.py seed_incidents --requirements-only
 """
 
 from datetime import date, timedelta
@@ -69,6 +73,22 @@ _RCIS_VERIFIED = (
     "Diário Oficial da União text of Resolução CD/ANPD nº 15/2024 (in.gov.br)"
 )
 
+# Res. 15/2024 doesn't say how its business days are counted. The deadline
+# figure itself is verified; the counting method is a documented
+# interpretation, spelled out here and in incidents/deadlines.py.
+_COUNTING_NOTE = (
+    "COUNTING METHOD (interpretation, not a verified rule): Res. 15/2024 and the ANPD's "
+    "incident-communication page don't say how the business days are counted. The tool "
+    "applies by analogy Resolução CD/ANPD nº 1/2021, Art. 8 (gov.br/anpd: business days, "
+    "start day excluded, end day included, extension when the ANPD's headquarters has no "
+    "working hours on the last day) and Lei 9.784/1999, Art. 66 (planalto.gov.br: start day "
+    "excluded, end day included), both checked 2026-09-26. Art. 8 governs Res. 1/2021's "
+    "own deadlines, so it applies here by analogy only. On the points left open, the tool "
+    "takes the conservative reading: public holidays are not skipped and days end at "
+    "23:59 UTC, so the date shown is never later than the analogy gives. See "
+    "incidents/deadlines.py."
+)
+
 LEGAL_REQUIREMENTS: list[dict[str, Any]] = [
     {
         "code": "lgpd-anpd",
@@ -100,9 +120,8 @@ LEGAL_REQUIREMENTS: list[dict[str, Any]] = [
             "specific legislation), §1 (counted from knowledge that the incident affected "
             "personal data), §3 (supplement within vinte dias úteis), §4 (ANPD electronic form), "
             "§8 (deadlines doubled for agentes de pequeno porte). The ANPD's regulations index "
-            "(gov.br/anpd) listed Res. 15/2024 as 'Vigente' with no amendments noted. The text "
-            "doesn't specify a business-day counting convention — see the TODO in "
-            "incidents/deadlines.py."
+            "(gov.br/anpd) listed Res. 15/2024 as 'Vigente' with no amendments noted. "
+            + _COUNTING_NOTE
         ),
         "order": 10,
     },
@@ -131,7 +150,7 @@ LEGAL_REQUIREMENTS: list[dict[str, Any]] = [
             "incident affected personal data; required content I-VII), §1 (simple language; "
             "direct and individualized where subjects can be identified), §3 (public channels "
             "when direct communication is unfeasible), §6 (deadline doubled for agentes de "
-            "pequeno porte)."
+            "pequeno porte). " + _COUNTING_NOTE
         ),
         "order": 20,
     },
@@ -559,9 +578,23 @@ class Command(BaseCommand):
         parser.add_argument(
             "--keep", action="store_true", help="Don't clear existing data before seeding."
         )
+        parser.add_argument(
+            "--requirements-only",
+            action="store_true",
+            help=(
+                "Only create/update the legal requirements (e.g. after re-verifying them); "
+                "leave incidents and reference data untouched."
+            ),
+        )
 
     @transaction.atomic
     def handle(self, *args, **options):
+        if options["requirements_only"]:
+            requirements = self._seed_requirements()
+            self.stdout.write(self.style.SUCCESS("Legal requirements refreshed."))
+            self._warn_unverified(requirements)
+            return
+
         if not options["keep"]:
             self.stdout.write("Clearing existing data…")
             # Incidents first: NotificationRecord protects LegalRequirement.
@@ -578,6 +611,9 @@ class Command(BaseCommand):
         self._seed_incidents(requirements, categories, activities, systems)
 
         self.stdout.write(self.style.SUCCESS("Seed data loaded."))
+        self._warn_unverified(requirements)
+
+    def _warn_unverified(self, requirements: dict[str, LegalRequirement]) -> None:
         unverified = [r.code for r in requirements.values() if not r.is_verified]
         if unverified:
             self.stdout.write(

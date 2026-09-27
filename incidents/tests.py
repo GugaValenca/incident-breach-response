@@ -393,6 +393,31 @@ class SeedContentTests(TestCase):
             with self.subTest(requirement.code):
                 self.assertTrue(any(domain in requirement.source_url for domain in allowed))
 
+    def test_requirements_only_refresh_keeps_incidents(self):
+        LegalRequirement.objects.filter(code="gdpr-data-subjects").update(title="Stale title")
+        incident_count = Incident.objects.count()
+        record_count = NotificationRecord.objects.count()
+        call_command("seed_incidents", "--requirements-only", stdout=io.StringIO())
+        self.assertEqual(Incident.objects.count(), incident_count)
+        self.assertEqual(NotificationRecord.objects.count(), record_count)
+        self.assertEqual(
+            LegalRequirement.objects.get(code="gdpr-data-subjects").title,
+            "Communicate the breach to affected data subjects",
+        )
+
+    def test_lgpd_counting_method_is_labelled_as_an_interpretation(self):
+        # The deadline figure is verified; how business days are counted is
+        # not stated by Res. 15/2024, so it must be presented as an
+        # interpretation with its sources, never as a verified rule.
+        for code in ("lgpd-anpd", "lgpd-data-subjects"):
+            with self.subTest(code):
+                notes = LegalRequirement.objects.get(code=code).verification_notes
+                self.assertIn("interpretation, not a verified rule", notes)
+                self.assertIn("Res. 1/2021", notes)
+                self.assertIn("9.784/1999", notes)
+        self.assertNotIn("TODO", deadlines.BUSINESS_DAY_CAVEAT)
+        self.assertIn("never later", deadlines.BUSINESS_DAY_CAVEAT)
+
     def test_sample_incidents_have_default_checklists(self):
         for incident in Incident.objects.all():
             self.assertEqual(incident.checklist_items.count(), len(DEFAULT_CHECKLIST))

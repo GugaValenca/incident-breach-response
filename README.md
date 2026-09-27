@@ -100,9 +100,28 @@ anyone auditing this repo:
 | Location | What |
 |---|---|
 | `seed_incidents.py` (`ccpa-private-action`) | `TODO: VERIFY` — § 1798.150 incorporates § 1798.81.5(d)(1)(A)'s definition of personal information, which could only be read in summary, not quoted, on 2026-09-26. The tool approximates it with the same flag used for § 1798.82(h). |
-| `incidents/deadlines.py` (module docstring) | `TODO: VERIFY` — Res. 15/2024 sets "três dias úteis" but doesn't say whether the start day is excluded, which holidays apply, or in which time zone the day ends. The code skips weekends only, excludes the start day, and ends days at 23:59:59 UTC. Brazilian public holidays aren't modeled, so a computed LGPD due date can be earlier than the real one, never later. |
 | `incidents/obligations.py` | Each rule's docstring states its simplification: LGPD's "may significantly affect" is read from the team's documented risk level; only GDPR Art. 34(3)(a) (encryption) is evaluated, not (b)/(c); California's "acquired by an unauthorized person" is assumed for every recorded incident. |
 | Scope | Other US states' breach laws, sector-specific regimes and contractual notice duties to customers/partners are not evaluated. |
+
+**How LGPD business days are counted: a documented interpretation.** The
+3-business-day figure is verified, but Res. CD/ANPD nº 15/2024 doesn't say
+*how* to count business days, and neither does the ANPD's
+incident-communication page. The tool fills that gap by analogy with the
+closest rules, both checked on 2026-09-26:
+[Res. CD/ANPD nº 1/2021, Art. 8](https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no1-2021)
+(business days, start day excluded, end day included, extension when the
+ANPD's headquarters has no working hours on the last day) and
+[Lei 9.784/1999, Art. 66](https://www.planalto.gov.br/ccivil_03/leis/l9784.htm)
+(same start/end rule). Art. 8 governs Res. 1/2021's own deadlines, so it's
+applied here by analogy, supported by the ANPD processing an incident
+communication as an administrative case. On the points the analogy leaves
+open, the tool takes the conservative reading: public holidays aren't
+skipped and days end at 23:59 UTC (20:59 in Brasília), so the date shown is
+never later than the analogy gives. The one assumption that cuts the other
+way is the start-day exclusion itself, which both rules state. The
+interpretation is labelled as such in `incidents/deadlines.py`, in the
+requirements' verification notes, and next to every LGPD deadline in the
+app and the PDF.
 
 Every screen and PDF carries the disclaimer that this is a
 portfolio/demonstration tool about a fictional company and not legal
@@ -190,7 +209,7 @@ data instead of clearing it).
 python manage.py test incidents
 ```
 
-88 tests cover: deadline arithmetic (weekend crossing, start-day
+90 tests cover: deadline arithmetic (weekend crossing, start-day
 exclusion, end-of-day boundaries, countdown labels); each framework's
 applicability rule, including the edges that matter legally (RCIS
 criteria are cumulative with risk; California has no risk-of-harm test;
@@ -241,7 +260,7 @@ incidents/                      The incident-response app
   exports.py                    PDF incident report
   throttling.py                 Which client IP the rate limits count against
   admin.py                      Django admin configuration
-  tests.py                      88 tests
+  tests.py                      90 tests
   management/commands/
     seed_incidents.py            Verified legal requirements + NimbusCart sample data
   templates/                     Page templates, plus the 403/404/500 error pages
@@ -321,6 +340,13 @@ is present.
    DATABASE_URL="<same value>" python manage.py createsuperuser
    ```
 5. **Deploy**: `vercel --prod`, or push to the connected branch.
+
+After re-verifying legal content, update only the requirements in the
+production database, leaving incidents untouched:
+
+```bash
+DATABASE_URL="<same value>" python manage.py seed_incidents --requirements-only
+```
 
 Live at [incident-breach-response.vercel.app](https://incident-breach-response.vercel.app),
 on a Neon Postgres database provisioned through Vercel's marketplace

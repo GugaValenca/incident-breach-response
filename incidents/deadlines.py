@@ -15,15 +15,31 @@ law — each is surfaced in the UI next to any deadline it affects):
   the start date (the start day itself is not counted).
 - Business days: same, skipping Saturdays and Sundays.
 
-# TODO: VERIFY business-day counting convention against ANPD guidance.
-# Resolução CD/ANPD nº 15/2024 (Arts. 6 and 9) sets "três dias úteis"
-# counted from the controller's knowledge, but its text (checked
-# 2026-09-26) does not say whether the start day is excluded, which
-# public holidays apply (national only, or state/municipal too) or which
-# time zone the day ends in. This module skips weekends only, excludes
-# the start day, and ends days at 23:59:59 in the start timestamp's time
-# zone (UTC in this app). Brazilian public holidays are NOT modeled, so a
-# computed LGPD due date can be earlier than the real one — never later.
+Business-day counting for LGPD deadlines — a documented interpretation
+(sources checked 2026-09-26):
+
+- Resolução CD/ANPD nº 15/2024 (Arts. 6 and 9) sets "três dias úteis"
+  counted from the controller's knowledge that the incident affected
+  personal data, but says nothing about how to count them. Neither does
+  the ANPD's incident-communication page (gov.br/anpd).
+- The closest rules are Resolução CD/ANPD nº 1/2021, Art. 8 (the ANPD's
+  inspection regulation: deadlines in business days, start day excluded,
+  end day included, extended when the ANPD's headquarters has no working
+  hours on the last day) and Lei 9.784/1999, Art. 66 (federal
+  administrative procedure, same start/end rule). Art. 8 governs the
+  deadlines of Res. 1/2021 itself, so it applies here by analogy, not by
+  its own terms; the analogy is supported by the ANPD processing an
+  incident communication as an administrative case (supplements are filed
+  "no mesmo processo").
+- Where the analogous rules are explicit, this module follows them: the
+  start day is excluded. On every point they leave open for this purpose,
+  it takes the conservative reading: public holidays are not skipped, and
+  each day ends at 23:59:59 in the start timestamp's time zone (UTC —
+  20:59 in Brasília). The due date shown can therefore be earlier than the
+  one the analogy gives, never later. For a compliance tool, erring early
+  is the acceptable error. The one assumption that cuts the other way is
+  the start-day exclusion itself: read as counting the day of knowledge,
+  the deadline would end one business day earlier than shown.
 """
 
 from dataclasses import dataclass
@@ -34,8 +50,11 @@ CALENDAR_DAYS = "calendar_days"
 BUSINESS_DAYS = "business_days"
 
 BUSINESS_DAY_CAVEAT = (
-    "Business days are counted Monday-Friday, excluding the day of discovery. "
-    "Brazilian public holidays are not modeled (TODO: VERIFY counting convention)."
+    "LGPD business days are counted Monday-Friday, excluding the day of discovery and "
+    "ending at 23:59 UTC. Resolução CD/ANPD nº 15/2024 doesn't say how to count them; "
+    "this is a conservative reading by analogy with Res. CD/ANPD nº 1/2021 (Art. 8) and "
+    "Lei 9.784/1999 (Art. 66), which exclude the start day. Public holidays aren't skipped, "
+    "so the date shown is never later than that reading gives."
 )
 
 
