@@ -20,7 +20,7 @@ admin.site.index_title = "Manage incidents, reference data & legal requirements"
 
 # The login form is the one publicly reachable, unauthenticated endpoint
 # into the admin, so it's the one worth rate limiting against brute force
-# (same as Projects 2 and 3). mypy sees this as reassigning a method on an
+# (same as Data-Mapping-ROPA and DPIA-Privacy-Impact-Assessment). mypy sees this as reassigning a method on an
 # instance, which Django's AdminSite is built to allow.
 admin.site.login = ratelimit(  # type: ignore[method-assign]
     key=client_ip, rate="5/m", method="POST", block=True

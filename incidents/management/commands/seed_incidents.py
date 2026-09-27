@@ -1,9 +1,9 @@
 """
 Seeds the legal requirements, NimbusCart's reference data (data
-categories and processing activities reused from Project 2's ROPA, plus
+categories and processing activities reused from Data-Mapping-ROPA, plus
 IT systems), and four fictional sample incidents.
 
-Content policy for LEGAL_REQUIREMENTS (same as Project 1's seed data):
+Content policy for LEGAL_REQUIREMENTS (same as the LGPD-GDPR-CCPA-Comparative-Analysis seed data):
   - Every requirement seeded with `is_verified=True` was checked against a
     primary or authoritative regulatory source on VERIFICATION_DATE; its
     `source_url` points at the source used and its `verification_notes`
@@ -361,13 +361,13 @@ LEGAL_REQUIREMENTS: list[dict[str, Any]] = [
             "'medical information' more narrowly than § 1798.82(i)(2) (no 'mental or physical "
             "condition'), so the tool classifies categories for § 1798.150 separately "
             "(DataCategory.is_ccpa_150_element). The CPPA publishes the CPI-adjusted amounts "
-            "(see Project 1's seed data)."
+            "(see the LGPD-GDPR-CCPA-Comparative-Analysis seed data)."
         ),
         "order": 90,
     },
 ]
 
-# Data categories from Project 2's ROPA, with NimbusCart's classification
+# Data categories from Data-Mapping-ROPA, with NimbusCart's classification
 # against the legal tests this tool evaluates. Classification choices for
 # this fictional dataset, not legal determinations about real data:
 # (name, description, special_category, financial, authentication,
@@ -450,7 +450,7 @@ DATA_CATEGORIES = [
     (
         "Precise Geolocation Data",
         "Delivery coordinates and real-time shipment tracking location. Flagged sensitive in "
-        "Project 2's internal triage, but not listed in LGPD Art. 5, II or GDPR Art. 9(1).",
+        "Data-Mapping-ROPA's internal triage, but not listed in LGPD Art. 5, II or GDPR Art. 9(1).",
         False,
         False,
         False,
@@ -483,7 +483,7 @@ DATA_CATEGORIES = [
     ),
 ]
 
-# Processing activities from Project 2's ROPA: (name, department, purpose, categories)
+# Processing activities from Data-Mapping-ROPA: (name, department, purpose, categories)
 PROCESSING_ACTIVITIES = [
     (
         "Customer Account Registration",

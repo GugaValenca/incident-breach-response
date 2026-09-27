@@ -30,7 +30,7 @@ line-length = 96
 target-version = "py312"
 
 [tool.ruff.lint]
-# Same selection as Projects 2 and 3: ruff's defaults minus E501 (black
+# Same selection as Data-Mapping-ROPA and DPIA-Privacy-Impact-Assessment: ruff's defaults minus E501 (black
 # owns line length, and seed data/help_text read better unwrapped), plus
 # import sorting, comprehension cleanups, timezone-naive datetime checks
 # (DTZ matters more than usual here: every deadline is computed from a

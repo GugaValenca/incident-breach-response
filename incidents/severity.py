@@ -10,7 +10,7 @@ and some of them turn on judgment calls (`Incident.risk_to_individuals`)
 that this score informs but does not replace.
 
 Deliberately isolated from views and models, the same pattern as
-Project 3's `dpia/scoring.py`: plain data in (`SeverityInputs`), plain
+DPIA-Privacy-Impact-Assessment's `dpia/scoring.py`: plain data in (`SeverityInputs`), plain
 data out (`SeverityResult`), so every weight and threshold is unit-tested
 directly.
 """

@@ -1,8 +1,8 @@
-/* Palette, typography, and component tokens are shared with Projects 2
-   (Data-Mapping-ROPA) and 3 (DPIA-Privacy-Impact-Assessment), so the
-   portfolio reads as one coherent system rather than four disconnected
-   exercises. Severity reuses the same semantic colors those projects use
-   for ok/sensitive/risk (low=ok, medium=sensitive, high=risk) plus one
+/* Palette, typography, and component tokens are shared with
+   Data-Mapping-ROPA and DPIA-Privacy-Impact-Assessment, so the related
+   tools read as one coherent system rather than four disconnected apps.
+   Severity reuses the same semantic colors those apps use for
+   ok/sensitive/risk (low=ok, medium=sensitive, high=risk) plus one
    darker "critical" step, instead of inventing a parallel palette. */
 :root {
     --bg: #f5f6f8;
@@ -324,7 +324,7 @@ a:hover { text-decoration: underline; }
 .review-table th, .review-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 0.85rem; vertical-align: top; }
 .review-table th { color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; }
 
-/* --- About page (shared with Project 2's about layout) -------------- */
+/* --- About page (shared with Data-Mapping-ROPA's about layout) -------------- */
 
 .about { max-width: 760px; }
 .about h1 { margin-bottom: 20px; }
@@ -359,7 +359,7 @@ a:hover { text-decoration: underline; }
     font-size: 0.75rem;
 }
 
-/* --- Critical severity (one step past Project 3's "high") ------------ */
+/* --- Critical severity (one step past DPIA-Privacy-Impact-Assessment's "high") ------------ */
 
 :root { --critical-bg: #f6d5d2; --critical-text: #7a0e0e; --critical-border: #e3a39c; }
 @media (prefers-color-scheme: dark) {
@@ -369,7 +369,7 @@ a:hover { text-decoration: underline; }
 .risk-meter--critical { background: var(--critical-bg); border-color: var(--critical-border); }
 .risk-meter--critical .risk-meter__label { color: var(--critical-text); }
 
-/* --- Filter bar (shared with Project 2's dashboard) ------------------ */
+/* --- Filter bar (shared with Data-Mapping-ROPA's dashboard) ------------------ */
 
 .filter-bar {
     background: var(--surface);

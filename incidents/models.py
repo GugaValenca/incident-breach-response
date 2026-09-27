@@ -15,12 +15,12 @@ The model separates two kinds of content on purpose:
 - **Legal content** (`LegalRequirement`) — what each framework requires,
   seeded from `incidents/management/commands/seed_incidents.py` with a
   `source_url`, a verification date and an `is_verified` flag, the same
-  content policy as Project 1. The decision logic that matches the two
+  content policy as LGPD-GDPR-CCPA-Comparative-Analysis. The decision logic that matches the two
   lives in `incidents/obligations.py`.
 
 IMPORTANT — legal disclaimer for anyone reviewing this code:
 This application is built around a fictional e-commerce company
-(NimbusCart, shared with Projects 2 and 3) for demonstration purposes.
+(NimbusCart, shared with Data-Mapping-ROPA and DPIA-Privacy-Impact-Assessment) for demonstration purposes.
 Incidents, systems and figures are invented. The severity model
 (`incidents/severity.py`) is a simplified internal model, NOT an official
 classification system, and nothing this tool outputs is legal advice.
@@ -40,7 +40,7 @@ MAX_TEXT_LENGTH = 5000
 
 
 class DataCategory(models.Model):
-    """A category of personal data, reused from Project 2's ROPA.
+    """A category of personal data, reused from Data-Mapping-ROPA.
 
     The boolean flags are NimbusCart's own classification of each
     category against the specific legal tests this tool evaluates. They
@@ -102,10 +102,10 @@ class DataCategory(models.Model):
 
 
 class ProcessingActivity(models.Model):
-    """A processing activity from Project 2's ROPA, reused as reference
+    """A processing activity from Data-Mapping-ROPA, reused as reference
     data so an incident can say which activities it touched.
 
-    Each portfolio project deploys with its own database, so this is a
+    Each of these apps deploys with its own database, so this is a
     copy of the ROPA's seed data (see seed_incidents.py), not a live link.
     """
 

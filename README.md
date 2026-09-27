@@ -11,15 +11,13 @@ notifications LGPD, GDPR and California law require, to whom, and by
 when — with a live countdown from the discovery date, a response
 checklist with owners, a timeline, and an exportable PDF incident report.
 
-This is Project 4 of the portfolio and closes the loop on the other
-three, all built around the same fictional NimbusCart e-commerce company:
-[Project 1](https://github.com/GugaValenca/lgpd-gdpr-ccpa-comparative-analysis)
+This is one of four related privacy tools built around the same fictional NimbusCart e-commerce company: [LGPD-GDPR-CCPA-Comparative-Analysis](https://github.com/GugaValenca/lgpd-gdpr-ccpa-comparative-analysis)
 compares the legal frameworks,
-[Project 2 (Data-Mapping-ROPA)](https://github.com/GugaValenca/data-mapping-ropa)
+[Data-Mapping-ROPA](https://github.com/GugaValenca/data-mapping-ropa)
 records the processing activities already running (this project reuses
 its data categories and processing activities, so an incident points at
 the same ROPA entries), and
-[Project 3 (DPIA)](https://github.com/GugaValenca/dpia-privacy-impact-assessment)
+[DPIA-Privacy-Impact-Assessment](https://github.com/GugaValenca/dpia-privacy-impact-assessment)
 assesses a new activity before it launches. This one covers what happens
 when something goes wrong anyway.
 
@@ -76,7 +74,7 @@ whether it does.
 Every deadline, threshold, authority and citation lives in one place,
 `LEGAL_REQUIREMENTS` in `incidents/management/commands/seed_incidents.py`,
 and each one was checked against a primary or regulatory source on
-**2026-09-26**, following Project 1's content policy: verified rows carry
+**2026-09-26**, following the content policy of LGPD-GDPR-CCPA-Comparative-Analysis: verified rows carry
 `is_verified=True`, a `source_url` and notes on exactly what was checked;
 anything not fully confirmed is `is_verified=False` with a
 `TODO: VERIFY ...` note. The decision logic never restates a deadline —
@@ -124,7 +122,7 @@ requirements' verification notes, and next to every LGPD deadline in the
 app and the PDF.
 
 Every screen and PDF carries the disclaimer that this is a
-portfolio/demonstration tool about a fictional company and not legal
+demonstration tool about a fictional company and not legal
 advice.
 
 ## Design decisions worth explaining
@@ -151,14 +149,14 @@ advice.
 - **Backend**: Django 6 (models, admin, ModelForms, function-based
   views, `prefetch_related` so the dashboard stays at a fixed number of
   queries, built-in Content-Security-Policy support) — the same stack as
-  Projects 1-3
+  the other three tools
 - **Frontend**: Django templates, plain CSS (light/dark aware, palette
-  shared with Projects 2 and 3), a few lines of vanilla JS
+  shared with Data-Mapping-ROPA and DPIA-Privacy-Impact-Assessment), a few lines of vanilla JS
 - **PDF generation**: [ReportLab](https://www.reportlab.com/), matching
-  Projects 2 and 3
+  Data-Mapping-ROPA and DPIA-Privacy-Impact-Assessment
 - **Tests**: Django's built-in test runner (`python manage.py test incidents`)
 - **Tooling**: black, isort, ruff and mypy with django-stubs, configured in
-  `pyproject.toml` as in Projects 2 and 3; bandit and pip-audit for
+  `pyproject.toml` as in Data-Mapping-ROPA and DPIA-Privacy-Impact-Assessment; bandit and pip-audit for
   security checks
 - **Deployment**: [Vercel](https://vercel.com) (Python/WSGI runtime),
   Postgres in production via `dj-database-url` (SQLite locally), static
@@ -303,7 +301,7 @@ static/                          CSS (shared palette) and JS
 - **Checked with tools.** bandit reports no issues (two false positives are
   annotated in place with the reason), and pip-audit finds no known
   vulnerabilities in the dependencies. The repo contains no secrets.
-- **Like Project 3's wizard, the public pages are open for demo purposes**:
+- **Like DPIA-Privacy-Impact-Assessment's wizard, the public pages are open for demo purposes**:
   anyone with the URL can log incidents and update checklists. A real
   incident register holds confidential information and would sit behind
   authentication (e.g. `login_required` on every view), deliberately left
@@ -311,14 +309,13 @@ static/                          CSS (shared palette) and JS
 - **Known limits of the demo setup.** The database cache increments
   counters with a read-then-write, so two requests arriving in the same
   instant can be counted once: the limits are approximate, not exact.
-  Dependencies are version ranges, not a lock file, matching Projects 2
-  and 3.
+  Dependencies are version ranges, not a lock file, matching Data-Mapping-ROPA and DPIA-Privacy-Impact-Assessment.
 - There is no admin account in this repo or its seed; `db.sqlite3` is
   git-ignored and all sample data lives in the seed command.
 
 ## Deployment (Vercel)
 
-Set up exactly like Projects 2 and 3: `vercel.json` + `api/index.py`
+Set up exactly like Data-Mapping-ROPA and DPIA-Privacy-Impact-Assessment: `vercel.json` + `api/index.py`
 route every request into the Django WSGI app, and `config/settings.py`
 switches from SQLite to Postgres whenever `DATABASE_URL`/`POSTGRES_URL`
 is present.
@@ -367,7 +364,7 @@ the part of privacy law with the least room for error — into a
 structured, tested Django application, with every legal deadline traced
 back to its primary source.
 
-This is **Project 4** of a four-project portfolio:
+This is one of four related privacy tools built around the same fictional company:
 
 1. [LGPD-GDPR-CCPA-Comparative-Analysis](https://github.com/GugaValenca/lgpd-gdpr-ccpa-comparative-analysis) — comparing the underlying legal frameworks side by side.
 2. [Data-Mapping-ROPA](https://github.com/GugaValenca/data-mapping-ropa) — recording processing activities already running.

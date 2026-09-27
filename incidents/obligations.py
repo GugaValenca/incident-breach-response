@@ -18,7 +18,7 @@ says so in its docstring. The judgment calls a statute leaves to the
 controller (is there a "risk"? a "high risk"? is this "large scale"?)
 are recorded on the Incident by the response team, never inferred here.
 
-DISCLAIMER: portfolio/demonstration tool; not legal advice.
+DISCLAIMER: demonstration tool; not legal advice.
 """
 
 from collections.abc import Callable
