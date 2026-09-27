@@ -1,0 +1,17 @@
+{% extends "incidents/base.html" %}
+
+{% block title %}Incident-Breach-Response — Not allowed{% endblock %}
+
+{% block content %}
+<section class="about">
+    <h1>Request not allowed</h1>
+    <article class="about__card">
+        <p>
+            This request was refused. If you've just made a lot of changes or
+            downloads in a short time, wait a minute and try again: this public
+            demo limits how often each visitor can write data or export PDFs.
+        </p>
+        <p><a href="{% url 'incidents:dashboard' %}" class="btn btn--primary">Back to the dashboard</a></p>
+    </article>
+</section>
+{% endblock %}

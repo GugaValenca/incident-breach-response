@@ -1,0 +1,5 @@
+{% comment %}Severity pill: icon + text label + color, never color alone. Expects `severity` (a SeverityResult).{% endcomment %}
+<span class="risk-pill risk-pill--{{ severity.level.value }}">
+    {% if severity.level.value == "low" %}✓{% elif severity.level.value == "medium" %}▲{% elif severity.level.value == "high" %}⛔{% else %}☠{% endif %}
+    {{ severity.level.label }}
+</span>

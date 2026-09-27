@@ -1,0 +1,137 @@
+{% extends "incidents/base.html" %}
+{% load static %}
+
+{% block title %}Incident-Breach-Response — Dashboard{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>Security incidents</h1>
+        <p class="page-header__subtitle">
+            NimbusCart's (fictional e-commerce company) incident register &mdash;
+            which notifications each incident triggers under LGPD, GDPR and
+            California law, to whom, and how long is left.
+        </p>
+    </div>
+    <div class="stat-row">
+        <div class="stat-card">
+            <span class="stat-card__value">{{ total_count }}</span>
+            <span class="stat-card__label">Incidents shown</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card__value">{{ open_count }}</span>
+            <span class="stat-card__label">Open</span>
+        </div>
+        <div class="stat-card stat-card--risk">
+            <span class="stat-card__value">{{ overdue_count }}</span>
+            <span class="stat-card__label">Overdue notices</span>
+        </div>
+    </div>
+</section>
+
+<section class="filter-bar">
+    <form method="get" class="filter-form" id="filter-form">
+        <div class="filter-form__field">
+            <label for="q">Search</label>
+            <input type="text" id="q" name="q" value="{{ filters.query }}" placeholder="Reference, title, summary…">
+        </div>
+        <div class="filter-form__field">
+            <label for="containment">Containment</label>
+            <select id="containment" name="containment">
+                <option value="">Any</option>
+                {% for value, label in containment_choices %}
+                <option value="{{ value }}" {% if filters.containment == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-form__field">
+            <label for="severity">Severity</label>
+            <select id="severity" name="severity">
+                <option value="">Any</option>
+                {% for value, label in severity_choices %}
+                <option value="{{ value }}" {% if filters.severity == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-form__field">
+            <label for="jurisdiction">Affects people in</label>
+            <select id="jurisdiction" name="jurisdiction">
+                <option value="">Anywhere</option>
+                {% for value, label in jurisdiction_choices %}
+                <option value="{{ value }}" {% if filters.jurisdiction == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-form__field">
+            <label for="framework">Triggers obligations under</label>
+            <select id="framework" name="framework">
+                <option value="">Any framework</option>
+                {% for value, label in framework_choices %}
+                <option value="{{ value }}" {% if filters.framework == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-form__actions">
+            <button type="submit" class="btn btn--primary">Apply</button>
+            {% if filters.is_active %}
+            <a href="{% url 'incidents:dashboard' %}" class="btn btn--ghost">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+</section>
+
+<section class="page-actions">
+    <a href="{% url 'incidents:incident_create' %}" class="btn btn--primary">+ Log an incident</a>
+</section>
+
+<section class="table-wrap">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Incident</th>
+                <th>Discovered</th>
+                <th>Containment</th>
+                <th>Severity</th>
+                <th>People affected</th>
+                <th>Obligations under</th>
+                <th>Next deadline</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td class="cell-primary">
+                    <a href="{% url 'incidents:incident_detail' row.incident.pk %}">{{ row.incident.reference }}</a><br>
+                    <span class="muted">{{ row.incident.title }}</span>
+                </td>
+                <td>{{ row.incident.discovered_at|date:"Y-m-d H:i" }} UTC</td>
+                <td><span class="badge badge--containment-{{ row.incident.containment_status }}">{{ row.incident.get_containment_status_display }}</span></td>
+                <td>{% include "incidents/_severity_pill.html" with severity=row.severity %}</td>
+                <td>{{ row.incident.total_individuals|default:"0" }}</td>
+                <td>
+                    {% regroup row.applicable by requirement.get_framework_display as groups %}
+                    {% for group in groups %}<span class="badge badge--framework">{{ group.grouper }}</span>{% empty %}<span class="muted">None</span>{% endfor %}
+                </td>
+                <td>
+                    {% with next=row.next_deadline %}
+                    {% if next %}
+                        {{ next.requirement.title }}
+                        <span class="countdown countdown--{{ next.status }}">{{ next.countdown.label }}</span>
+                    {% else %}
+                        <span class="muted">Nothing pending</span>
+                    {% endif %}
+                    {% endwith %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="empty-state">No incidents match these filters.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+<p class="caveat">{{ severity_disclaimer }}</p>
+
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

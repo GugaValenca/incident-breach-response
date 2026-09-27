@@ -1,0 +1,23 @@
+__pycache__/
+*.pyc
+db.sqlite3
+.venv/
+venv/
+env/
+*.egg-info/
+.DS_Store
+.env
+staticfiles/
+
+.vercel
+
+# PDFs are generated at request time, never checked in
+*.pdf
+
+# Lint/type-check/coverage tool caches
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+.env*.local

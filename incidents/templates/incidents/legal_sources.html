@@ -1,0 +1,59 @@
+{% extends "incidents/base.html" %}
+
+{% block title %}Incident-Breach-Response — Legal Sources{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>Legal sources</h1>
+        <p class="page-header__subtitle">
+            Every requirement the tool evaluates, with the primary source it was
+            checked against and when. Anything not fully confirmed is marked
+            unverified with a note on what's left to check &mdash; the same content
+            policy as <a href="https://github.com/GugaValenca/lgpd-gdpr-ccpa-comparative-analysis" target="_blank" rel="noopener">Project 1</a>.
+        </p>
+    </div>
+    <div class="stat-row">
+        <div class="stat-card">
+            <span class="stat-card__value">{{ requirements|length }}</span>
+            <span class="stat-card__label">Requirements</span>
+        </div>
+        <div class="stat-card stat-card--risk">
+            <span class="stat-card__value">{{ unverified_count }}</span>
+            <span class="stat-card__label">Unverified</span>
+        </div>
+    </div>
+</section>
+
+{% regroup requirements by get_framework_display as frameworks %}
+{% for framework in frameworks %}
+<h2>{{ framework.grouper }}</h2>
+{% for requirement in framework.list %}
+<article class="source-card {% if not requirement.is_verified %}source-card--unverified{% endif %}">
+    <h2>
+        {{ requirement.title }}
+        {% if requirement.is_verified %}
+        <span class="badge badge--verified">✓ Verified {{ requirement.verified_on|date:"Y-m-d" }}</span>
+        {% else %}
+        <span class="badge badge--unverified">⚠ Unverified</span>
+        {% endif %}
+    </h2>
+    <p class="source-card__meta">
+        {{ requirement.get_kind_display }} · To: {{ requirement.recipient }} ·
+        <a href="{{ requirement.source_url }}" target="_blank" rel="noopener">{{ requirement.citation }}</a>
+    </p>
+    <dl class="review-dl">
+        <dt>Trigger</dt><dd>{{ requirement.trigger_summary }}</dd>
+        <dt>Deadline</dt>
+        <dd>
+            {{ requirement.deadline_text }}
+            {% if requirement.deadline_runs_from %}<span class="muted">(clock starts at: {{ requirement.deadline_runs_from.title }})</span>{% endif %}
+        </dd>
+    </dl>
+    <p class="source-card__notes">{{ requirement.verification_notes }}</p>
+</article>
+{% endfor %}
+{% endfor %}
+
+<p class="caveat">{{ business_day_caveat }}</p>
+{% endblock %}

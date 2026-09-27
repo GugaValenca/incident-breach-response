@@ -1,0 +1,5 @@
+{% comment %}Obligation status pill: icon + text label + color. Expects `obligation`.{% endcomment %}
+<span class="status-pill status-pill--{{ obligation.status }}">
+    {% if obligation.status == "sent" %}✓{% elif obligation.status == "overdue" %}⛔{% elif obligation.status == "pending" or obligation.status == "no_fixed_deadline" %}⏳{% elif obligation.status == "ongoing" %}●{% else %}—{% endif %}
+    {{ obligation.status_label }}
+</span>

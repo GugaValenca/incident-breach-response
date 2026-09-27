@@ -1,0 +1,13 @@
+{% extends "incidents/base.html" %}
+
+{% block title %}Incident-Breach-Response — Not found{% endblock %}
+
+{% block content %}
+<section class="about">
+    <h1>Page not found</h1>
+    <article class="about__card">
+        <p>That incident or page doesn't exist. It may have been removed when the sample data was reset.</p>
+        <p><a href="{% url 'incidents:dashboard' %}" class="btn btn--primary">Back to the dashboard</a></p>
+    </article>
+</section>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% load static %}<!DOCTYPE html>
+{% comment %}
+Standalone on purpose: Django renders 500.html without a request context,
+so this page can't rely on context processors, messages or the base layout.
+{% endcomment %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incident-Breach-Response — Server error</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <main class="page">
+        <section class="about">
+            <h1>Something went wrong</h1>
+            <article class="about__card">
+                <p>The server hit an unexpected error. Please try again in a moment.</p>
+                <p><a href="/" class="btn btn--primary">Back to the dashboard</a></p>
+            </article>
+        </section>
+    </main>
+</body>
+</html>

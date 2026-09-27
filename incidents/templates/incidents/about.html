@@ -1,0 +1,94 @@
+{% extends "incidents/base.html" %}
+
+{% block title %}Incident-Breach-Response — About{% endblock %}
+
+{% block content %}
+<section class="about">
+    <h1>About this project</h1>
+
+    <article class="about__card">
+        <h2>What this is</h2>
+        <p>
+            Incident-Breach-Response is a security incident and breach response
+            tracker: log an incident, record which data, systems and processing
+            activities it affects and how many people in which jurisdictions,
+            and the tool works out which notifications LGPD, GDPR and California
+            law require, to whom, and by when &mdash; with a live countdown from
+            the discovery date, a response checklist, a timeline, and a PDF
+            incident report.
+        </p>
+    </article>
+
+    <article class="about__card">
+        <h2>Why it exists</h2>
+        <p>
+            This is <strong>Project 4</strong> of a four-project portfolio built
+            while transitioning from a legal career (legal team leadership in
+            Brazil) into a Data Governance &amp; Privacy Analyst role in the US.
+            It closes the loop on the other three, all built around the same
+            fictional NimbusCart e-commerce company:
+        </p>
+        <ol class="about__list">
+            <li><a href="https://github.com/GugaValenca/lgpd-gdpr-ccpa-comparative-analysis" target="_blank" rel="noopener">LGPD-GDPR-CCPA-Comparative-Analysis</a> &mdash; comparing the underlying legal frameworks side by side.</li>
+            <li><a href="https://github.com/GugaValenca/data-mapping-ropa" target="_blank" rel="noopener">Data-Mapping-ROPA</a> &mdash; recording the processing activities already running. This project reuses its data categories and processing activities, so an incident points at the same ROPA entries.</li>
+            <li><a href="https://github.com/GugaValenca/dpia-privacy-impact-assessment" target="_blank" rel="noopener">DPIA-Privacy-Impact-Assessment</a> &mdash; assessing a new activity before it launches.</li>
+            <li><strong>Incident-Breach-Response</strong> (this project) &mdash; responding when something goes wrong anyway.</li>
+        </ol>
+    </article>
+
+    <article class="about__card">
+        <h2>How it works</h2>
+        <ul class="about__list">
+            <li><strong>Facts vs. law.</strong> The response team records facts and documented judgment calls (e.g. "likely to result in a high risk"). The legal requirements &mdash; deadlines, recipients, citations &mdash; are separate, source-verified records; small, tested rules decide which ones apply.</li>
+            <li><strong>Explained verdicts.</strong> Every obligation shows <em>why</em> it applies or doesn't (e.g. "RCIS Art. 5 criteria met: system authentication data").</li>
+            <li><strong>Deadlines.</strong> Counted from the discovery date: exact hours for GDPR's 72 hours, calendar days for California, business days for the ANPD. California's Attorney General deadline runs from the consumer notice, so it's projected until that notice is recorded as sent.</li>
+            <li><strong>Severity.</strong> A simplified internal triage score (data type, volume, containment, cause, encryption) &mdash; clearly labelled, and deliberately kept separate from the legal tests.</li>
+        </ul>
+    </article>
+
+    <article class="about__card">
+        <h2>Built with</h2>
+        <p>
+            Django · SQLite (dev) / Postgres (production) · Django templates +
+            vanilla CSS/JS · ReportLab (PDF) · Django's built-in test runner ·
+            deployed on Vercel &mdash; the same stack as Projects 1-3.
+        </p>
+    </article>
+
+    <article class="about__card about__card--disclaimer">
+        <h2>Scope &amp; disclaimer</h2>
+        <p>
+            All company, incident and system details are fictional. The severity
+            score is a <strong>simplified internal model, not an official
+            classification system</strong>. Nothing this tool outputs is legal
+            advice.
+        </p>
+        <p>
+            Every deadline, threshold, authority and citation was checked against
+            a primary or regulatory source (planalto.gov.br and the Diário
+            Oficial for the ANPD regulation, eur-lex.europa.eu and the EDPB,
+            leginfo.legislature.ca.gov) and carries its source link and
+            verification date &mdash; see <a href="{% url 'incidents:legal_sources' %}">Legal Sources</a>.
+            Anything that couldn't be fully confirmed is marked unverified with a
+            <code>TODO: VERIFY</code> note instead of being stated as fact.
+            Other US states' breach laws, sector-specific rules and contractual
+            notice duties are out of scope.
+        </p>
+    </article>
+
+    <article class="about__card">
+        <h2>About the author</h2>
+        <p>
+            Gustavo Valença is a Brazilian-trained lawyer with legal team
+            leadership experience, working across Python/Django development and
+            data privacy law (LGPD, GDPR, CCPA). This project turns the first
+            hours of a breach &mdash; the part of privacy law with the least room
+            for error &mdash; into a structured, tested Django application.
+        </p>
+        <p class="about__links">
+            <a href="https://github.com/GugaValenca" target="_blank" rel="noopener">GitHub</a>
+            <a href="https://www.linkedin.com/in/gugavalenca/" target="_blank" rel="noopener">LinkedIn</a>
+        </p>
+    </article>
+</section>
+{% endblock %}

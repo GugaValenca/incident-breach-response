@@ -1,0 +1,14 @@
+# Development-only tooling: not needed to run the app, only to work on it
+# (linting, formatting, type checking, coverage, and PDF-content
+# assertions in the test suite). Install alongside requirements.txt:
+#   pip install -r requirements.txt -r requirements-dev.txt
+-r requirements.txt
+
+black>=24.0
+ruff>=0.6
+isort>=5.13
+mypy>=1.11
+django-stubs>=5.0
+coverage>=7.6
+pip-audit>=2.7
+pypdf>=5.0

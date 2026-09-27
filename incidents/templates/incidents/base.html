@@ -1,0 +1,46 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Incident-Breach-Response{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header__inner">
+            <a class="site-header__brand" href="{% url 'incidents:dashboard' %}">
+                <span class="site-header__logo" aria-hidden="true">◈</span>
+                Incident-Breach-Response
+            </a>
+            <nav class="site-header__nav">
+                <a href="{% url 'incidents:dashboard' %}">Dashboard</a>
+                <a href="{% url 'incidents:incident_create' %}">Log Incident</a>
+                <a href="{% url 'incidents:legal_sources' %}">Legal Sources</a>
+                <a href="{% url 'incidents:about' %}">About</a>
+                <a href="/admin/" target="_blank" rel="noopener">Admin</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="page">
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li class="messages__item messages__item--{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <p>
+            Incident-Breach-Response &mdash; sample incidents belong to a fictional company.
+            Severity is a simplified internal model, not an official classification.
+            Not legal advice; see <a href="{% url 'incidents:legal_sources' %}">Legal Sources</a>
+            and the <a href="{% url 'incidents:about' %}">About</a> page.
+        </p>
+    </footer>
+</body>
+</html>

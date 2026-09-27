@@ -1,0 +1,71 @@
+{% extends "incidents/base.html" %}
+
+{% block title %}Incident-Breach-Response — {% if incident %}Edit {{ incident.reference }}{% else %}Log an incident{% endif %}{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>{% if incident %}Edit {{ incident.reference }}{% else %}Log an incident{% endif %}</h1>
+        <p class="page-header__subtitle">
+            Record what's known now; every field can be updated as the
+            investigation develops. Severity and notification obligations are
+            recalculated from these facts each time the incident is viewed.
+        </p>
+    </div>
+</section>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="form-card form-field--error">
+        {% for error in form.non_field_errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    <section class="form-card">
+        <h2>What happened</h2>
+        {% include "incidents/_field.html" with field=form.title %}
+        {% include "incidents/_field.html" with field=form.summary %}
+        <div class="form-grid">
+            {% include "incidents/_field.html" with field=form.incident_type %}
+            {% include "incidents/_field.html" with field=form.containment_status %}
+            {% include "incidents/_field.html" with field=form.occurred_at %}
+            {% include "incidents/_field.html" with field=form.discovered_at %}
+        </div>
+    </section>
+
+    <section class="form-card">
+        <h2>What's affected</h2>
+        {% include "incidents/_field.html" with field=form.affected_data_categories %}
+        {% include "incidents/_field.html" with field=form.affected_systems %}
+        {% include "incidents/_field.html" with field=form.affected_activities %}
+    </section>
+
+    <section class="form-card">
+        <h2>Affected individuals by jurisdiction</h2>
+        <p class="section-note">Best current estimate. Obligations are evaluated for Brazil, the EU/EEA and California; the other two are recorded for severity and reporting only.</p>
+        <div class="form-grid">
+            {% for field in form.jurisdiction_fields %}
+            {% include "incidents/_field.html" with field=field %}
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="form-card">
+        <h2>Risk assessment</h2>
+        <p class="section-note">Documented judgment calls the legal tests depend on. The tool records them; it doesn't make them.</p>
+        {% include "incidents/_field.html" with field=form.risk_to_individuals %}
+        {% include "incidents/_field.html" with field=form.data_encrypted %}
+        {% include "incidents/_field.html" with field=form.encryption_key_compromised %}
+        {% include "incidents/_field.html" with field=form.is_large_scale %}
+        {% include "incidents/_field.html" with field=form.involves_vulnerable_individuals %}
+        {% include "incidents/_field.html" with field=form.involves_confidential_data %}
+        {% include "incidents/_field.html" with field=form.controller_is_small_agent %}
+    </section>
+
+    <div class="form-actions">
+        <a href="{% if incident %}{% url 'incidents:incident_detail' incident.pk %}{% else %}{% url 'incidents:dashboard' %}{% endif %}" class="btn btn--ghost">Cancel</a>
+        <button type="submit" class="btn btn--primary">{% if incident %}Save changes{% else %}Log incident{% endif %}</button>
+    </div>
+</form>
+{% endblock %}

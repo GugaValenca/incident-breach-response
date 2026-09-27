@@ -1,0 +1,21 @@
+{% comment %}One form field with label, help text and errors. Expects `field`.{% endcomment %}
+{% if field.field.widget.input_type == "checkbox" %}
+<div class="form-field form-field--checkbox {% if field.errors %}form-field--error{% endif %}">
+    <label for="{{ field.id_for_label }}">{{ field }} {{ field.label }}</label>
+    {% if field.help_text %}<p class="form-field__help">{{ field.help_text }}</p>{% endif %}
+    {% for error in field.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+</div>
+{% else %}
+<div class="form-field {% if field.errors %}form-field--error{% endif %}">
+    <label {% if field.field.widget.allow_multiple_selected %}id="{{ field.auto_id }}-label"{% else %}for="{{ field.id_for_label }}"{% endif %}>{{ field.label }}</label>
+    {% if field.field.widget.allow_multiple_selected %}
+    <ul class="checkbox-list" aria-labelledby="{{ field.auto_id }}-label">
+        {% for choice in field %}<li><label for="{{ choice.id_for_label }}">{{ choice.tag }} {{ choice.choice_label }}</label></li>{% endfor %}
+    </ul>
+    {% else %}
+    {{ field }}
+    {% endif %}
+    {% if field.help_text %}<p class="form-field__help">{{ field.help_text }}</p>{% endif %}
+    {% for error in field.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+</div>
+{% endif %}

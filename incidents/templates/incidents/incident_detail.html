@@ -1,0 +1,229 @@
+{% extends "incidents/base.html" %}
+
+{% block title %}Incident-Breach-Response — {{ incident.reference }}{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>{{ incident.reference }} &mdash; {{ incident.title }}</h1>
+        <p class="page-header__subtitle">{{ incident.summary }}</p>
+    </div>
+    <div class="detail-actions">
+        <span class="badge badge--containment-{{ incident.containment_status }}">{{ incident.get_containment_status_display }}</span>
+        {% include "incidents/_severity_pill.html" with severity=row.severity %}
+        <a href="{% url 'incidents:incident_edit' incident.pk %}" class="btn btn--ghost">Edit</a>
+        <a href="{% url 'incidents:export_pdf' incident.pk %}" class="btn btn--export">⬇ Export PDF</a>
+    </div>
+</section>
+
+<article class="review-card">
+    <h2>1. Incident facts</h2>
+    <dl class="fact-grid">
+        <div><dt>Type</dt><dd>{{ incident.get_incident_type_display }}</dd></div>
+        <div><dt>Occurred</dt><dd>{% if incident.occurred_at %}{{ incident.occurred_at|date:"Y-m-d H:i" }} UTC{% else %}Unknown{% endif %}</dd></div>
+        <div><dt>Discovered (clock starts)</dt><dd>{{ incident.discovered_at|date:"Y-m-d H:i" }} UTC</dd></div>
+        <div><dt>Risk to individuals</dt><dd>{{ incident.get_risk_to_individuals_display }}</dd></div>
+        <div><dt>Encryption</dt><dd>{% if incident.data_encrypted %}Encrypted{% if incident.encryption_key_compromised %}, key compromised{% else %}, key safe{% endif %}{% else %}Not encrypted{% endif %}</dd></div>
+        <div><dt>Other RCIS factors</dt><dd>
+            {% if incident.is_large_scale %}Large scale. {% endif %}
+            {% if incident.involves_vulnerable_individuals %}Children/adolescents/elderly. {% endif %}
+            {% if incident.involves_confidential_data %}Confidential data. {% endif %}
+            {% if not incident.is_large_scale and not incident.involves_vulnerable_individuals and not incident.involves_confidential_data %}None{% endif %}
+        </dd></div>
+    </dl>
+    <p class="caveat">
+        "Risk to individuals" is the response team's documented judgment. The
+        law leaves that call to the controller, so this tool records it rather
+        than computing it.
+    </p>
+</article>
+
+<article class="review-card">
+    <h2>2. Scope</h2>
+    <dl class="review-dl">
+        <dt>Data categories</dt>
+        <dd>
+            {% for category in incident.affected_data_categories.all %}
+            <span class="badge {% if category.is_special_category or category.is_ca_breach_element %}badge--sensitive{% else %}badge--neutral{% endif %}">{{ category.name }}</span>
+            {% empty %}<span class="muted">None recorded</span>{% endfor %}
+        </dd>
+        <dt>Systems</dt>
+        <dd>{% for system in incident.affected_systems.all %}{{ system.name }} <span class="muted">({{ system.hosting }})</span>{% if not forloop.last %} · {% endif %}{% empty %}<span class="muted">None recorded</span>{% endfor %}</dd>
+        <dt>Processing activities (from the ROPA)</dt>
+        <dd>{% for activity in incident.affected_activities.all %}{{ activity.name }}{% if not forloop.last %} · {% endif %}{% empty %}<span class="muted">None recorded</span>{% endfor %}</dd>
+        <dt>Affected individuals by jurisdiction</dt>
+        <dd>
+            {% for impact in incident.jurisdiction_impacts.all %}
+            {{ impact.get_jurisdiction_display }}: <strong>{{ impact.individuals }}</strong>{% if not forloop.last %} · {% endif %}
+            {% empty %}<span class="muted">None recorded</span>{% endfor %}
+            {% if incident.jurisdiction_impacts.all %} &mdash; total <strong>{{ incident.total_individuals }}</strong>{% endif %}
+        </dd>
+    </dl>
+</article>
+
+<article class="review-card review-card--score">
+    <h2>3. Severity</h2>
+    <div class="risk-meter risk-meter--{{ row.severity.level.value }}">
+        <span class="risk-meter__label">{{ row.severity.level.label }}</span>
+        <span class="risk-meter__score">score {{ row.severity.score }}</span>
+    </div>
+    <table class="review-table">
+        <thead><tr><th>Factor</th><th>Points</th></tr></thead>
+        <tbody>
+            {% for factor in row.severity.factors %}
+            <tr><td>{{ factor.label }}</td><td>{% if factor.points > 0 %}+{% endif %}{{ factor.points }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p class="disclaimer">{{ severity_disclaimer }}</p>
+</article>
+
+<article class="review-card" id="obligations">
+    <h2>4. Notification obligations</h2>
+    <p class="section-note">
+        Evaluated live from the facts above against source-verified requirements
+        (see <a href="{% url 'incidents:legal_sources' %}">Legal Sources</a>). Deadlines are
+        shown in UTC.
+    </p>
+    <div class="table-wrap">
+    <table class="data-table">
+        <thead>
+            <tr><th>Framework</th><th>Obligation</th><th>Deadline</th><th>Status</th><th>Why</th></tr>
+        </thead>
+        <tbody>
+            {% for obligation in notifications %}
+            {% with requirement=obligation.requirement %}
+            <tr class="obligation-row--{{ obligation.status }}">
+                <td>
+                    <span class="badge badge--framework">{{ requirement.get_framework_display }}</span>
+                    {% if not requirement.is_verified %}<span class="badge badge--unverified" title="{{ requirement.verification_notes }}">Unverified</span>{% endif %}
+                </td>
+                <td>
+                    <strong>{{ requirement.title }}</strong><br>
+                    <span class="muted">To: {{ requirement.recipient }}</span><br>
+                    <a href="{{ requirement.source_url }}" target="_blank" rel="noopener" class="muted">{{ requirement.citation }}</a>
+                </td>
+                <td>
+                    {% if obligation.due_at %}
+                        {{ obligation.due_at|date:"Y-m-d H:i" }}{% if obligation.due_is_projected %} <span class="muted">(projected)</span>{% endif %}
+                        <br><span class="muted">{{ obligation.deadline_value }} {{ requirement.get_deadline_unit_display|lower }}</span>
+                    {% else %}
+                        <span class="muted">{{ requirement.deadline_text }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% include "incidents/_status_pill.html" %}
+                    {% if obligation.sent_at %}
+                        <span class="muted">{{ obligation.sent_at|date:"Y-m-d H:i" }}{% if obligation.sent_late %} — after the deadline{% endif %}</span>
+                    {% elif obligation.countdown %}
+                        <span class="countdown countdown--{{ obligation.status }}">{{ obligation.countdown.label }}</span>
+                    {% endif %}
+                    {% if obligation.applies and not obligation.sent_at %}
+                    <details class="inline-form">
+                        <summary>Record as sent</summary>
+                        <form method="post" action="{% url 'incidents:notification_record' incident.pk requirement.pk %}">
+                            {% csrf_token %}
+                            <label class="muted" for="sent-{{ requirement.pk }}">Sent at (UTC)</label>
+                            <input type="datetime-local" id="sent-{{ requirement.pk }}" name="sent_at" value="{{ record_form.sent_at.value|date:'Y-m-d\TH:i' }}" required>
+                            <input type="text" name="reference" placeholder="Protocol / reference (optional)">
+                            <input type="text" name="notes" placeholder="Notes (optional)">
+                            <button type="submit" class="btn btn--primary btn--small">Save</button>
+                        </form>
+                    </details>
+                    {% endif %}
+                </td>
+                <td><ul class="reasons">{% for reason in obligation.reasons %}<li>{{ reason }}</li>{% endfor %}</ul></td>
+            </tr>
+            {% endwith %}
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    <p class="caveat">{{ business_day_caveat }}</p>
+
+    <h3>Record-keeping &amp; liability exposure</h3>
+    <table class="review-table">
+        <thead><tr><th>Framework</th><th>Requirement</th><th>Status</th><th>Why</th></tr></thead>
+        <tbody>
+            {% for obligation in other_obligations %}
+            {% with requirement=obligation.requirement %}
+            <tr class="obligation-row--{{ obligation.status }}">
+                <td>
+                    <span class="badge badge--framework">{{ requirement.get_framework_display }}</span>
+                    {% if not requirement.is_verified %}<span class="badge badge--unverified" title="{{ requirement.verification_notes }}">Unverified</span>{% endif %}
+                </td>
+                <td>
+                    <strong>{{ requirement.title }}</strong><br>
+                    <span class="muted">{{ requirement.deadline_text }}</span><br>
+                    <a href="{{ requirement.source_url }}" target="_blank" rel="noopener" class="muted">{{ requirement.citation }}</a>
+                </td>
+                <td>{% include "incidents/_status_pill.html" %}</td>
+                <td><ul class="reasons">{% for reason in obligation.reasons %}<li>{{ reason }}</li>{% endfor %}</ul></td>
+            </tr>
+            {% endwith %}
+            {% endfor %}
+        </tbody>
+    </table>
+</article>
+
+<article class="review-card" id="checklist">
+    <h2>5. Response checklist <span class="muted">({{ checklist_done }} of {{ checklist|length }} finished)</span></h2>
+    <progress class="progress" max="{{ checklist|length }}" value="{{ checklist_done }}">{{ checklist_done }} of {{ checklist|length }}</progress>
+    <table class="review-table">
+        <thead><tr><th>Phase</th><th>Task</th><th>Owner &amp; status</th></tr></thead>
+        <tbody>
+            {% for item, form in checklist %}
+            <tr class="{% if item.is_finished %}checklist-item--finished{% endif %}">
+                <td class="muted">{{ item.phase }}</td>
+                <td class="checklist-item__title">{{ item.title }}</td>
+                <td>
+                    <form method="post" action="{% url 'incidents:checklist_update' item.pk %}" class="checklist-form">
+                        {% csrf_token %}
+                        <label class="sr-only" for="{{ form.owner.id_for_label }}">Owner</label>
+                        {{ form.owner }}
+                        <label class="sr-only" for="{{ form.status.id_for_label }}">Status</label>
+                        {{ form.status }}
+                        <button type="submit" class="btn btn--ghost btn--small">Save</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <form method="post" action="{% url 'incidents:checklist_add' incident.pk %}" class="add-row">
+        {% csrf_token %}
+        <label class="sr-only" for="new-title">New task</label>
+        <input type="text" id="new-title" name="title" placeholder="Add a task…" required maxlength="200">
+        <label class="sr-only" for="new-phase">Phase</label>
+        <input type="text" id="new-phase" name="phase" placeholder="Phase (optional)" maxlength="40">
+        <label class="sr-only" for="new-owner">Owner</label>
+        <input type="text" id="new-owner" name="owner" placeholder="Owner (optional)" maxlength="120">
+        <button type="submit" class="btn btn--primary btn--small">Add task</button>
+    </form>
+</article>
+
+<article class="review-card" id="timeline">
+    <h2>6. Timeline</h2>
+    <ol class="timeline">
+        {% for event in incident.timeline_events.all %}
+        <li><time datetime="{{ event.occurred_at|date:'c' }}">{{ event.occurred_at|date:"Y-m-d H:i" }} UTC</time>{{ event.description }}</li>
+        {% empty %}
+        <li class="muted">No events recorded yet.</li>
+        {% endfor %}
+    </ol>
+    <form method="post" action="{% url 'incidents:timeline_add' incident.pk %}" class="add-row">
+        {% csrf_token %}
+        <label class="sr-only" for="{{ timeline_form.occurred_at.id_for_label }}">When (UTC)</label>
+        {{ timeline_form.occurred_at }}
+        <label class="sr-only" for="{{ timeline_form.description.id_for_label }}">What happened</label>
+        <input type="text" id="{{ timeline_form.description.id_for_label }}" name="description" placeholder="What happened…" required>
+        <button type="submit" class="btn btn--primary btn--small">Add event</button>
+    </form>
+</article>
+
+<p class="disclaimer">
+    This tool is a portfolio/demonstration project about a fictional company and does not
+    constitute legal advice. Notification obligations are the output of simplified rules;
+    confirm every obligation with qualified counsel.
+</p>
+{% endblock %}
