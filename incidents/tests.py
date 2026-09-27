@@ -914,15 +914,22 @@ class SettingsFailSafeTests(TestCase):
     """Imports the settings in a fresh interpreter with a given environment,
     since settings are evaluated once per process."""
 
-    def load_settings(self, **env):
+    def load_settings(self, expression="s.DEBUG", **env):
         clean_env = {
             k: v
             for k, v in os.environ.items()
-            if k not in ("VERCEL", "DJANGO_DEBUG", "DJANGO_SECRET_KEY")
+            if k
+            not in (
+                "VERCEL",
+                "DJANGO_DEBUG",
+                "DJANGO_SECRET_KEY",
+                "DATABASE_URL",
+                "POSTGRES_URL",
+            )
         }
         clean_env.update(env)
         return subprocess.run(
-            [sys.executable, "-c", "import config.settings as s; print(s.DEBUG)"],
+            [sys.executable, "-c", f"import config.settings as s; print({expression})"],
             cwd=Path(__file__).resolve().parent.parent,
             env=clean_env,
             capture_output=True,
@@ -942,3 +949,12 @@ class SettingsFailSafeTests(TestCase):
     def test_local_development_still_works_with_zero_configuration(self):
         result = self.load_settings()
         self.assertEqual(result.stdout.strip(), "True")
+
+    def test_rate_limit_counters_are_shared_when_a_database_is_configured(self):
+        # Per-process memory would give every serverless instance its own
+        # counters; with a database the cache (and the limits) are shared.
+        backend = "s.CACHES['default']['BACKEND']"
+        with_db = self.load_settings(backend, DATABASE_URL="postgres://u:p@localhost:5432/db")
+        self.assertEqual(with_db.stdout.strip(), "django.core.cache.backends.db.DatabaseCache")
+        local = self.load_settings("getattr(s, 'CACHES', 'default in-memory')")
+        self.assertEqual(local.stdout.strip(), "default in-memory")

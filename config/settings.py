@@ -187,6 +187,21 @@ else:
         }
     }
 
+# Cache — which is where the rate limits (incidents/views.py, admin login)
+# keep their counters. Django's default in-memory cache is per process, and
+# on Vercel every serverless instance is its own process, so each one would
+# count separately and the limits would barely apply. With a real database
+# configured, the counters live in a Postgres table instead, shared by every
+# instance. The table is created by `manage.py createcachetable` (see the
+# README's deployment steps; the test runner creates it automatically).
+if _database_url:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+            "LOCATION": "django_cache",
+        }
+    }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators

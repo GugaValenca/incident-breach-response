@@ -1,5 +1,6 @@
 # Incident-Breach-Response
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-incident--breach--response.vercel.app-000000?style=flat&logo=vercel&logoColor=white)](https://incident-breach-response.vercel.app)
 [![GitHub](https://img.shields.io/badge/GitHub-GugaValenca-181717?style=flat&logo=github&logoColor=white)](https://github.com/GugaValenca)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-gugavalenca-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/gugavalenca/)
 
@@ -189,7 +190,7 @@ data instead of clearing it).
 python manage.py test incidents
 ```
 
-87 tests cover: deadline arithmetic (weekend crossing, start-day
+88 tests cover: deadline arithmetic (weekend crossing, start-day
 exclusion, end-of-day boundaries, countdown labels); each framework's
 applicability rule, including the edges that matter legally (RCIS
 criteria are cumulative with risk; California has no risk-of-harm test;
@@ -202,7 +203,8 @@ TODO, every source is a primary/regulatory domain); the dashboard filters,
 forms, validation and detail-page actions through real requests; and the
 PDF export producing complete, disclaimer-carrying, markup-safe output;
 and the security hardening described below (rate limits, client-IP
-handling, CSP and security headers, input ceilings, reference numbering
+handling, the shared rate-limit cache in production, CSP and security
+headers, input ceilings, reference numbering
 after deletions, and the settings refusing to start insecurely).
 
 The suite passes on both SQLite and PostgreSQL 16:
@@ -239,7 +241,7 @@ incidents/                      The incident-response app
   exports.py                    PDF incident report
   throttling.py                 Which client IP the rate limits count against
   admin.py                      Django admin configuration
-  tests.py                      87 tests
+  tests.py                      88 tests
   management/commands/
     seed_incidents.py            Verified legal requirements + NimbusCart sample data
   templates/                     Page templates, plus the 403/404/500 error pages
@@ -273,7 +275,11 @@ static/                          CSS (shared palette) and JS
   minute; the admin login allows 5 attempts per minute. On Vercel the
   visitor is identified by `X-Real-IP`, which Vercel overwrites with the
   client's address so it can't be spoofed; elsewhere that header is
-  ignored (`incidents/throttling.py`).
+  ignored (`incidents/throttling.py`). In production the counters live in
+  a Postgres cache table shared by every serverless instance. Per-process
+  memory would give each instance its own counters, which in practice
+  meant no limit at all on the live site (found and fixed during
+  deployment testing).
 - **Checked with tools.** bandit reports no issues (two false positives are
   annotated in place with the reason), and pip-audit finds no known
   vulnerabilities in the dependencies. The repo contains no secrets.
@@ -282,11 +288,11 @@ static/                          CSS (shared palette) and JS
   incident register holds confidential information and would sit behind
   authentication (e.g. `login_required` on every view), deliberately left
   out here so the demo can be tried without an account.
-- **Known limits of the demo setup.** Rate-limit counters live in each
-  server instance's local memory, so on serverless hosting every instance
-  counts separately. A shared cache (e.g. Redis) would make the limits
-  global. Dependencies are version ranges, not a lock file, matching
-  Projects 2 and 3.
+- **Known limits of the demo setup.** The database cache increments
+  counters with a read-then-write, so two requests arriving in the same
+  instant can be counted once: the limits are approximate, not exact.
+  Dependencies are version ranges, not a lock file, matching Projects 2
+  and 3.
 - There is no admin account in this repo or its seed; `db.sqlite3` is
   git-ignored and all sample data lives in the seed command.
 
@@ -310,16 +316,18 @@ is present.
    build doesn't do this for you):
    ```bash
    DATABASE_URL="<value from Vercel's Storage tab>" python manage.py migrate
+   DATABASE_URL="<same value>" python manage.py createcachetable   # rate-limit counters
    DATABASE_URL="<same value>" python manage.py seed_incidents
    DATABASE_URL="<same value>" python manage.py createsuperuser
    ```
 5. **Deploy**: `vercel --prod`, or push to the connected branch.
 
-Not deployed yet at the time of writing. Verified locally on SQLite and on
-PostgreSQL 16 (migrations, seed data, the full test suite), plus a
-production-mode run (`DEBUG` off, Vercel environment) in which every page,
-the PDF export, the CSRF-protected incident form, the HTTPS redirect and
-the security headers were exercised against the running server.
+Live at [incident-breach-response.vercel.app](https://incident-breach-response.vercel.app),
+on a Neon Postgres database provisioned through Vercel's marketplace
+integration, migrated and seeded. Verified against the live deployment:
+every page and PDF export, the CSRF-protected incident form, the HTTP →
+HTTPS redirect, the security headers and the rate limits. Also verified
+locally on SQLite and PostgreSQL 16 with the full test suite.
 
 ## About the author
 
