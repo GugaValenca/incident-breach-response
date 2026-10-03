@@ -67,6 +67,7 @@ EDPB_GUIDELINES_9_2022 = (
 )
 CA_CIV_1798_82 = "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=1798.82."
 CA_CIV_1798_150 = "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=1798.150."
+CPPA_CPI_ADJUSTMENT = "https://www.cppa.ca.gov/regulations/cpi_adjustment.html"
 
 _RCIS_VERIFIED = (
     f"VERIFIED {VERIFICATION_DATE} against planalto.gov.br (Lei 13.709/2018, Art. 48 caput and "
@@ -337,31 +338,42 @@ LEGAL_REQUIREMENTS: list[dict[str, Any]] = [
             "security question and answer, is subject to unauthorized access and exfiltration, "
             "theft or disclosure as a result of the "
             "business's failure to implement and maintain reasonable security may sue for "
-            "statutory damages of $100-$750 per consumer per incident, CPI-adjusted under "
-            "§ 1798.199.95(d) (or actual damages, if greater), after giving the business 30 days' written notice and an opportunity to "
-            "cure. Breach notice itself is governed by § 1798.82 (tracked above)."
+            "statutory damages of $107-$799 per consumer per incident (the statute's base "
+            "$100-$750 figures, as CPI-adjusted under § 1798.199.95(d) effective January 1, "
+            "2025; next adjustment January 1, 2027) (or actual damages, if greater), after "
+            "giving the business 30 days' written notice and an opportunity to cure. Breach "
+            "notice itself is governed by § 1798.82 (tracked above)."
         ),
         "deadline_unit": LegalRequirement.DeadlineUnit.NONE,
         "deadline_value": None,
         "deadline_text": "Not a notification deadline",
-        "citation": "Cal. Civ. Code § 1798.150(a)(1), (b); § 1798.81.5(d)(1)-(2)",
+        "citation": "Cal. Civ. Code § 1798.150(a)(1), (b); § 1798.81.5(d)(1)-(2); § 1798.199.95(d)",
         "source_url": CA_CIV_1798_150,
         "is_verified": True,
-        "verified_on": VERIFICATION_DATE,
+        "verified_on": date(2026, 10, 2),
         "verification_notes": (
             f"VERIFIED {VERIFICATION_DATE} against leginfo.legislature.ca.gov: § 1798.150(a)(1) "
             "(nonencrypted and nonredacted personal information 'as defined in subparagraph (A) "
             "of paragraph (1) of subdivision (d) of Section 1798.81.5', or an email address with a "
-            "password or security question and answer; unauthorized access and exfiltration, "
-            "theft or disclosure; reasonable-security duty; $100-$750 per consumer per incident "
-            "or actual damages, adjusted under § 1798.199.95(d)) and (b) (30 days' written notice "
-            "and cure), as amended by Stats. 2024, Ch. 121 (AB 3286); § 1798.81.5(d)(1)(A)(i)-(vii) "
-            "and (d)(2), as amended by Stats. 2021, Ch. 527 (AB 825). That list matches "
-            "§ 1798.82(h)(1) except that it has no ALPR element, but § 1798.81.5(d)(2) defines "
-            "'medical information' more narrowly than § 1798.82(i)(2) (no 'mental or physical "
-            "condition'), so the tool classifies categories for § 1798.150 separately "
-            "(DataCategory.is_ccpa_150_element). The CPPA publishes the CPI-adjusted amounts "
-            "(see the LGPD-GDPR-CCPA-Comparative-Analysis seed data)."
+            "password or security question and answer — not 'username', unlike § 1798.82(h)(2) — "
+            "unauthorized access and exfiltration, theft or disclosure; reasonable-security duty; "
+            "statute's base figures $100-$750 per consumer per incident or actual damages, "
+            "adjusted under § 1798.199.95(d)) and (b) (30 days' written notice and cure), as "
+            "amended by Stats. 2024, Ch. 121 (AB 3286); § 1798.81.5(d)(1)(A)(i)-(vii) and (d)(2), "
+            "as amended by Stats. 2021, Ch. 527 (AB 825); § 1798.81.5(d)(1)(B) confirms the "
+            "name+element list in (A) is the only part of § 1798.81.5(d) that § 1798.150(a)(1) "
+            "cross-references (it does not pull in (B)'s separate username-or-email option). That "
+            "(A) list matches § 1798.82(h)(1) except that it has no ALPR element, but "
+            "§ 1798.81.5(d)(2) defines 'medical information' more narrowly than § 1798.82(i)(2) "
+            "(no 'mental or physical condition'), so the tool classifies categories for § 1798.150 "
+            "separately (DataCategory.is_ccpa_150_element). "
+            f"RE-VERIFIED 2026-10-02 against {CPPA_CPI_ADJUSTMENT} (CPPA's official CPI-adjustment "
+            "notice: effective January 1, 2025, § 1798.150(a)(1) statutory damages are $107-$799 "
+            "per consumer per incident, up from $100-$750; next adjustment January 1, 2027) and "
+            "against leginfo's § 1798.199.95(d) text (lists subdivision (a) of Section 1798.150 "
+            "among the provisions it adjusts). CORRECTED from a prior version of this entry that "
+            "stated the stale $100-$750 base figures as if currently in effect without giving the "
+            "adjusted amount."
         ),
         "order": 90,
     },

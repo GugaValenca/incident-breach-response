@@ -385,15 +385,28 @@ class Incident(models.Model):
         return self.containment_status != self.Containment.RESOLVED
 
     @property
+    def individuals_by_jurisdiction(self) -> dict[str, int]:
+        """Affected-individual counts keyed by jurisdiction code. A plain
+        dict built from `jurisdiction_impacts`, the one place that
+        relationship is aggregated — `total_individuals`, `individuals_in`
+        and `obligations.facts_from_incident` all read from it instead of
+        each re-walking the related manager.
+
+        Callers are expected to have prefetched `jurisdiction_impacts`.
+        """
+        by_jurisdiction: dict[str, int] = {}
+        for impact in self.jurisdiction_impacts.all():
+            by_jurisdiction[impact.jurisdiction] = (
+                by_jurisdiction.get(impact.jurisdiction, 0) + impact.individuals
+            )
+        return by_jurisdiction
+
+    @property
     def total_individuals(self) -> int:
-        return sum(impact.individuals for impact in self.jurisdiction_impacts.all())
+        return sum(self.individuals_by_jurisdiction.values())
 
     def individuals_in(self, jurisdiction: str) -> int:
-        return sum(
-            impact.individuals
-            for impact in self.jurisdiction_impacts.all()
-            if impact.jurisdiction == jurisdiction
-        )
+        return self.individuals_by_jurisdiction.get(jurisdiction, 0)
 
 
 class JurisdictionImpact(models.Model):

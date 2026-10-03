@@ -73,13 +73,8 @@ def facts_from_incident(incident) -> IncidentFacts:
     """Snapshot a saved Incident. Callers should prefetch
     `affected_data_categories` and `jurisdiction_impacts`."""
     categories = list(incident.affected_data_categories.all())
-    by_jurisdiction: dict[str, int] = {}
-    for impact in incident.jurisdiction_impacts.all():
-        by_jurisdiction[impact.jurisdiction] = (
-            by_jurisdiction.get(impact.jurisdiction, 0) + impact.individuals
-        )
     return IncidentFacts(
-        individuals_by_jurisdiction=by_jurisdiction,
+        individuals_by_jurisdiction=incident.individuals_by_jurisdiction,
         has_special_category=any(c.is_special_category for c in categories),
         has_financial=any(c.is_financial for c in categories),
         has_authentication=any(c.is_authentication for c in categories),
